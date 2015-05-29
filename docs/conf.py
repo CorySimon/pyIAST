@@ -14,7 +14,7 @@
 import sys, os
 import sphinx_rtd_theme
 import mock
-from unittest.mock import MagicMock
+from mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod
