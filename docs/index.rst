@@ -6,7 +6,7 @@
 Documentation for IAST Package
 ================================
 
-This Python package takes pure component gas adsorption isotherms in a nanoporous material and predicts a mixture isotherm, how much of each gas will adsorb when the material is in equilibrium with a multi-component mixture. Ideal Adsorbed Solution Theory (IAST) is the framework used to predict the mixture adsorption isotherm from the pure component adsorption isotherms.
+This Python package takes pure component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms. Ideal Adsorbed Solution Theory (IAST) is the framework used to predict the mixture adsorption isotherm from the pure component adsorption isotherms.
 
 This code has three options to apply IAST to the pure component adsorption isotherms:
 
@@ -18,7 +18,11 @@ This code has three options to apply IAST to the pure component adsorption isoth
 Installation
 ============
 
+Clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the setup script:
 
+.. code-block:: python
+   
+   python setup.py
 
 ===
 Use
@@ -26,11 +30,18 @@ Use
 
 As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
 
-Simulated pure component adsorption isotherms at 298 K are present in:
-* IRMOF-1_clean_Xe_isotherm_298K.csv
-* IRMOF-1_clean_Kr_isotherm_298K.csv
+Simulated pure component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:
 
-We ran dual component GCMC mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and different mixture conditions. This data is present in mixture_Xe_Kr_IRMOF-1_clean_298K.csv. We use IAST to reproduce this result.
+- `IRMOF-1_clean_Xe_isotherm_298K.csv`
+- `IRMOF-1_clean_Kr_isotherm_298K.csv`
+
+We simulated binary mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and at different mixture conditions using dual-component grand-canonical Monte Carlo. This data is present in `mixture_Xe_Kr_IRMOF-1_clean_298K.csv`. We use IAST to reproduce this result.
+
+First, import the `IAST` package:
+
+.. code-block:: python
+
+   import IAST
 
 -----------------------------------
 Import the pure component isotherms
@@ -50,27 +61,29 @@ The units for pressure and loading in both DataFrames must be consistent; loadin
 Construct isotherm objects
 --------------------------
 
-First, import the `IAST` package:
-
-.. code-block:: python
-
-   import IAST
-
 We separate the process of characterizing the pure component adsorption isotherms from performing IAST. Construct the models by passing the DataFrame with the pure component adsorption isotherm and the names of the columns that correspond to the loading and pressure.
 
 * Langmuir isotherm model
 
 .. code-block:: python
 
-    xe_isotherm = IAST.LangmuirIsotherm(df_Xe, loading_key="Loading(mol/m3)", pressure_key="Pressure(bar)")
-    kr_isotherm = IAST.LangmuirIsotherm(df_Kr, loading_key="Loading(mol/m3)", pressure_key="Pressure(bar)")
+    xe_isotherm = IAST.LangmuirIsotherm(df_Xe, 
+                                        loading_key="Loading(mol/m3)", 
+                                        pressure_key="Pressure(bar)")
+    kr_isotherm = IAST.LangmuirIsotherm(df_Kr, 
+                                        loading_key="Loading(mol/m3)", 
+                                        pressure_key="Pressure(bar)")
 
 * Quadratic isotherm model
 
 .. code-block:: python
 
-    xe_isotherm = IAST.QuadraticIsotherm(df_Xe, loading_key="Loading(mol/m3)", pressure_key="Pressure(bar)")
-    kr_isotherm = IAST.QuadraticIsotherm(df_Kr, loading_key="Loading(mol/m3)", pressure_key="Pressure(bar)")
+    xe_isotherm = IAST.QuadraticIsotherm(df_Xe, 
+                                         loading_key="Loading(mol/m3)", 
+                                         pressure_key="Pressure(bar)")
+    kr_isotherm = IAST.QuadraticIsotherm(df_Kr, 
+                                         loading_key="Loading(mol/m3)", 
+                                         pressure_key="Pressure(bar)")
 
 * Linear interpolation model
 
@@ -78,8 +91,14 @@ The linear interpolation model has an additional, optional argument `fill_value`
 
 .. code-block:: python
 
-    xe_isotherm = IAST.InterpolatorIsotherm(df_Xe, loading_key="Loading(mol/m3)", pressure_key="Pressure(bar)", fill_value=df_Xe["Loading(mol/m3)"].max())
-    kr_isotherm = IAST.InterpolatorIsotherm(df_Kr, loading_key="Loading(mol/m3)", pressure_key="Pressure(bar)", fill_value=df_Kr["Loading(mol/m3)"].max())
+    xe_isotherm = IAST.InterpolatorIsotherm(df_Xe, 
+                                            loading_key="Loading(mol/m3)", 
+                                            pressure_key="Pressure(bar)", 
+                                            fill_value=df_Xe["Loading(mol/m3)"].max())
+    kr_isotherm = IAST.InterpolatorIsotherm(df_Kr, 
+                                            loading_key="Loading(mol/m3)", 
+                                            pressure_key="Pressure(bar)", 
+                                            fill_value=df_Kr["Loading(mol/m3)"].max())
 
 Once an isotherm model is constructed, we can view the fit of the isotherm model to the data by:
 
@@ -107,7 +126,7 @@ Peform IAST calculation
 
 Given the pure component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a mixture of the said gases.
 
-As an example, given `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure component isotherms] at a 20/80 mol % Xe/Kr mixture at a pressure of 1.0. To do this, we call:
+As an example, given the pure component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure component isotherms] at a 20/80 mol % Xe/Kr mixture at a pressure of 1.0. To do this, we call:
 
 .. code-block:: python
     
@@ -132,9 +151,9 @@ Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms ob
 Tests
 =====
 
-This code was tested using pure component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in [this IPython notebook](http://nbviewer.ipython.org/github/CorySimon/IAST.jl/blob/master/test/test.ipynb), and the files are in the `/test` directory.
+This code was tested using pure component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/Test.ipynb>`_, and the files are in the `/test` directory.
 
-TL;DR The following plot shows the simulated Xe/Kr adsorption (points) using binary Grand Canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
+TL;DR The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
 
 .. image:: validation.png
    :align: center
@@ -143,18 +162,16 @@ TL;DR The following plot shows the simulated Xe/Kr adsorption (points) using bin
 Some notes for troubleshooting
 ==============================
 
-For using linear interpolation: this is not always a feasible option, depending on how high of a pressure to which your adsorption isotherms extend. It may be required to extrapolate beyond the last pressure point, which is where e.g. the Langmuir model fit may be better. At present, if the IAST calculation needs to extrapolate the isotherm beyond the highest pressure that you provide, it spits out an `NA`. You can change the interpolation strategy from `BCnan` to `BCnearest` if you want to assume the loading beyond the highest pressure provided is equal to the loading at the highest pressure provided. This is a dangerous option, so I did not make this default.
-
-For fitting models (Langmuir, Quadratic) to the pure-component isotherms: the Optim package in Python may fail to fit your adsorption isotherm. A common cause is that your adsorption isotherm does not exhibit enough curvature in order to estimate the saturation loading; that is, you need to obtain data on the uptake at higher pressures. This can be an advantage of the approach using numerical quadrature and linear interpolation: you may not need to know the loading beyond a certain pressure (depends on the conditions in which you are interested).
-
 ===============================
 Class documentation and details
 ===============================
 
 .. automodule:: isotherms
+   :special-members:
    :members:
 
 .. automodule:: IAST
+   :special-members:
    :members:
 
 Indices and tables

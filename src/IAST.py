@@ -6,12 +6,16 @@ import scipy.optimize
 
 def IAST(p, isotherms, verboseflag=False):
     """
-    Perform IAST for a mixture, given pure-component isotherms 
+    Perform IAST to predict multi-component adsorption isotherm from pure component adsorption isotherms.
     
-    :param p: Array partial pressures of components
-    :param isotherms list of pure-component adsorption isotherms
-    :param verboseflag: bool print stuff
-    :return: q: array of predicted uptakes of each component
+    The material is now in equilibrium with a mixture of gases with partial pressures in the array `p`. 
+    
+    :param p: Array partial pressures of gas components, e.g. [.5, .5]
+    :param isotherms: list of pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
+    :param verboseflag: Bool print stuff
+
+    :return: predicted uptakes of each component
+    :rtype: Array
     """
     n_components = len(isotherms)  # number of components in the mixture
     if n_components == 1:

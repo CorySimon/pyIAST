@@ -13,7 +13,9 @@ import pandas as pd
 
 class LangmuirIsotherm:
     """
-    Langmuir isotherm object
+    Langmuir isotherm object to store pure-component adsorption isotherm
+
+    :math:`M \frac{KP}{1+KP}`
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None):
@@ -24,7 +26,7 @@ class LangmuirIsotherm:
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
 
-        :returns: self
+        :return: self
         :rtype: LangmuirIsotherm
         """
         # store isotherm data in self
@@ -68,8 +70,9 @@ class LangmuirIsotherm:
         """
         Given stored Langmuir parameters, compute loading at pressure P
 
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: float loading at pressure P (in corresponding units as df in instantiation)
+        :param P: Float or Array pressure (in corresponding units as df in instantiation)
+        :return: loading at pressure P (in corresponding units as df in instantiation)
+        :rtype: Float or Array
         """
         return self.M * (self.K * P / (1.0 + self.K * P))
 
@@ -78,7 +81,8 @@ class LangmuirIsotherm:
         Calculate spreading pressure at a bulk gas pressure P
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: float spreading pressure
+        :return: spreading pressure
+        :rtype: Float
         """
         return self.M * np.log(1.0 + self.K * P)
 
@@ -87,7 +91,8 @@ class LangmuirIsotherm:
 class QuadraticIsotherm:
     """
     Quadratic isotherm object
-    eqn (8) of Tarafder
+    
+    :math:`M \frac{(K_a P + 2 K_b P)P}{1+K_aP+K_bP^2}`
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None):
@@ -144,10 +149,11 @@ class QuadraticIsotherm:
 
     def loading(self, P):
         """
-        Given stored Langmuir parameters, compute loading at pressure P
+        Given stored Quadratic isotherm parameters, compute loading at pressure P
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: float loading at pressure P (in corresponding units as df in instantiation)
+        :return: loading at pressure P (in corresponding units as df in instantiation)
+        :rtype: Float or Array
         """
         return self.M * (self.Ka + 2.0 * self.Kb * P) * P / (1.0 + self.Ka * P + self.Kb * P ** 2)
 
@@ -156,7 +162,7 @@ class QuadraticIsotherm:
         Calculate spreading pressure at a bulk gas pressure P
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: float spreading pressure
+        :return: pi: float spreading pressure
         """
         return self.M * np.log(1.0 + self.Ka * P + self.Kb * P ** 2)
 
@@ -196,22 +202,25 @@ class InterpolatorIsotherm:
 
     def loading(self, P):
         """
-        Given stored Langmuir parameters, compute loading at pressure P
+        Interpolate isotherm to compute loading at pressure P
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: float loading at pressure P (in corresponding units as df in instantiation)
+        :return: loading at pressure P (in corresponding units as df in instantiation)
+        :rtype: Float or Array
         """
         return self.interp1d(P)
 
     def spreading_pressure(self, P):
         """
         Calculate spreading pressure at a bulk gas pressure P
-        Use trapezoid rule on isotherm
-        \int_0^p q(\hat{p})/ \hat{p} d\hat{p} 
-        eqn 4 of Tarafder
+
+        Use trapezoid rule on isotherm data points
+
+        Spreading pressure :math`\Pi = \int_0^p q(\hat{p})/ \hat{p} d\hat{p}` 
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: float spreading pressure
+        :return: spreading pressure
+        :rtype: Float
         """
         # get all data points less than this P. Do not use P = 0.0, this will give nan.
         idx = (self.df[self.pressure_key].values < P) & (self.df[self.pressure_key].values != 0.0)
