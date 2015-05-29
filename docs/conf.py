@@ -14,10 +14,15 @@
 import sys, os
 import sphinx_rtd_theme
 import mock
+from unittest.mock import MagicMock
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'scipy.optimize', 'pandas']
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return Mock()
+
+MOCK_MODULES = ['pandas', 'numpy', 'pandas', 'scipy', 'scipy.interpolate', 'scipy.optimize', 'matplotlib', 'matplotlib.pyplot']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
