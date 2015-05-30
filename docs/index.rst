@@ -135,6 +135,22 @@ As an example, given the pure component adsorption isotherm objects `xe_isotherm
 
 which will return `q`, an array of component loadings at these mixture conditions predicted by IAST. Entry 0 will correspond to Xe; entry 1 will correspond to Kr.
 
+------------------------
+Reverse IAST calculation
+------------------------
+
+In reverse IAST, we specify the mole fractions of gas in the *adsorbed* phase and the total bulk gas pressure, then calculate the bulk gas composition that yields these adsorbed mole fractions. This is useful e.g. in catalysis, where one seeks to control the composition of gas adsorbed in the material.
+
+As an example,  given the pure component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the bulk gas composition [at the same temperature as the pure component isotherms] that will yield a 20/80 mol % Xe/Kr mixture in the *adsorbed phase* at a total bulk gas pressure of 1.0. To do this, we call:
+
+.. code-block:: python
+    
+    P_total = 1.0
+    z = [.2, .8]  # list/array of 
+    y, q = IAST.reverse_IAST(z, P_total, [xe_isotherm, kr_isotherm])
+
+which will return `y`, the desired bulk gas phase mole fractions, and `q`, an array of component loadings at these mixture conditions predicted by IAST. Entry 0 will correspond to Xe; entry 1 will correspond to Kr.
+
 ======
 Theory
 ======
