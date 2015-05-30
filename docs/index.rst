@@ -167,9 +167,9 @@ Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms ob
 Tests
 =====
 
-This code was tested using pure component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/Test.ipynb>`_, and the files are in the `/test` directory.
+This code was tested using pure component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/test.ipynb>`_, and the files are in the `/test` directory.
 
-TL;DR The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
+**TL;DR** The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
 
 .. image:: validation.png
    :align: center
