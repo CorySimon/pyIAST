@@ -13,17 +13,39 @@
 
 import sys, os
 import sphinx_rtd_theme
-from mock import Mock as MagicMock  # for local make html
- # from unittest.mock import MagicMock  # for readthedocs
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
+from mock import Mock
+ # from mock import Mock as MagicMock  # for local make html
+ #  # from unittest.mock import MagicMock  # for readthedocs
+ # 
+ # class Mock(MagicMock):
+ #     @classmethod
+ #     def __getattr__(cls, name):
+ #         return Mock()
+ # 
+ # MOCK_MODULES = ['pandas', 'numpy', 'pandas', 'scipy', 'scipy.interpolate', 'scipy.optimize', 'matplotlib', 'matplotlib.pyplot']
+ # sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+class Mock(object):                                                             
+    #__all__ = []                                                               
+    version_info = (1,2,3, 'final', 0)                                          
+    def __init__(self, *args, **kwargs):                                        
+        pass                                                                    
+    def __call__(self, *args, **kwargs):                                        
+        return Mock()                                                           
+    @classmethod                                                                
+    def __getattr__(cls, name):                                                 
+        if name in ('__file__', '__path__'):                                    
+            return '/dev/null'                                                  
+        elif name[0] == name[0].upper():                                        
+            mockType = type(name, (), {})                                       
+            mockType.__module__ = __name__                                      
+            return mockType                                                     
+        else:                                                                   
+            return Mock()                                                       
 
 MOCK_MODULES = ['pandas', 'numpy', 'pandas', 'scipy', 'scipy.interpolate', 'scipy.optimize', 'matplotlib', 'matplotlib.pyplot']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
+for mod_name in MOCK_MODULES:                                                   
+    sys.modules[mod_name] = Mock()   
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
