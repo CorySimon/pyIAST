@@ -55,13 +55,13 @@ Use the `Pandas` package to load the pure component adsorption isotherms as Data
     df_Xe = pd.read_csv("IRMOF-1_clean_Xe_isotherm_298K.csv", skiprows=1)
     df_Kr = pd.read_csv("IRMOF-1_clean_Kr_isotherm_298K.csv", skiprows=1)
 
-The units for pressure and loading in both DataFrames must be consistent; loading of gas must be in a molar quantity for IAST to apply (e.g. mmol/g or mmol/cm3). The `IAST` package will then work with these units throughout. 
+The units for pressure and loading in both DataFrames must be consistent; loading of gas must be in a molar quantity for IAST to apply (e.g. mmol/g or mmol/cm\ :superscript:`3`). The `IAST` package will then work with these units throughout. 
 
 --------------------------
 Construct isotherm objects
 --------------------------
 
-We separate the process of characterizing the pure component adsorption isotherms from performing IAST. Construct the models by passing the DataFrame with the pure component adsorption isotherm and the names of the columns that correspond to the loading and pressure.
+We separate the process of characterizing the pure component adsorption isotherms from performing IAST calculations. Construct the models by passing the DataFrame with the pure component adsorption isotherm and the names of the columns that correspond to the loading and pressure.
 
 * Langmuir isotherm model
 
@@ -74,6 +74,13 @@ We separate the process of characterizing the pure component adsorption isotherm
                                         loading_key="Loading(mol/m3)", 
                                         pressure_key="Pressure(bar)")
 
+You may see the model parameters identified by least squares fitting by:
+
+.. code-block:: python
+
+   xe_isotherm.M  # saturation loading (units: mol/m3 here)
+   xe_isotherm.K  # Langmuir constant (units : 1/bar here)
+
 * Quadratic isotherm model
 
 .. code-block:: python
@@ -84,6 +91,14 @@ We separate the process of characterizing the pure component adsorption isotherm
     kr_isotherm = IAST.QuadraticIsotherm(df_Kr, 
                                          loading_key="Loading(mol/m3)", 
                                          pressure_key="Pressure(bar)")
+
+You may see the model parameters identified by least squares fitting by:
+
+.. code-block:: python
+
+   xe_isotherm.M  # half of saturation loading (units: mol/m3 here)
+   xe_isotherm.Ka  # isotherm constant (units : 1/bar here)
+   xe_isotherm.Kb  # isotherm constant (units : 1/bar^2 here)
 
 * Linear interpolation model
 
@@ -114,7 +129,7 @@ Using the adsorption isotherm objects, we can calculate the predicted loading at
 
    xe_isotherm.loading(1.0)
    
-or the spreading pressure via:
+or the reduced spreading pressure via:
 
 .. code-block:: python
 
@@ -124,7 +139,7 @@ or the spreading pressure via:
 Peform IAST calculation
 -----------------------
 
-Given the pure component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a mixture of the said gases.
+Given the pure component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a *mixture* of gases.
 
 As an example, given the pure component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure component isotherms] at a 20/80 mol % Xe/Kr mixture at a pressure of 1.0. To do this, we call:
 
@@ -146,10 +161,10 @@ As an example,  given the pure component adsorption isotherm objects `xe_isother
 .. code-block:: python
     
     P_total = 1.0
-    z = [.2, .8]  # list/array of 
+    z = [.2, .8]  # list/array of desired mole fractions in adsorbed phase
     y, q = IAST.reverse_IAST(z, P_total, [xe_isotherm, kr_isotherm])
 
-which will return `y`, the desired bulk gas phase mole fractions, and `q`, an array of component loadings at these mixture conditions predicted by IAST. Entry 0 will correspond to Xe; entry 1 will correspond to Kr.
+which will return `y`, the required bulk gas phase mole fractions, and `q`, an array of component loadings at these mixture conditions predicted by IAST. Entry 0 will correspond to Xe; entry 1 will correspond to Kr.
 
 ======
 Theory
@@ -159,7 +174,7 @@ Ideal Adsorbed Solution Theory was developed by Myers and Prausnitz:
 
 Myers, A. L., & Prausnitz, J. M. (1965). Thermodynamics of mixed‐gas adsorption. AIChE Journal, 11(1), 121-127.
     
-We follow the method outlined in the reference:
+We follow the method outlined in the more accessible reference:
 
 Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms obeying ideal adsorbed solution theory. Chem. Eng. Technol. 2012, 35, No. 1, 102-108.
 
@@ -185,6 +200,10 @@ Class documentation and details
 .. automodule:: isotherms
    :special-members:
    :members:
+
+.. currentmodule:: isotherms
+
+.. autofunction:: plot_isotherm
 
 .. automodule:: IAST
    :special-members:

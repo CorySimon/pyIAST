@@ -6,15 +6,17 @@ import scipy.optimize
 
 def IAST(p, isotherms, verboseflag=False):
     """
-    Perform IAST to predict multi-component adsorption isotherm from pure component adsorption isotherms.
+    Perform IAST calculation to predict multi-component adsorption isotherm from pure component adsorption isotherms.
     
-    The material is now in equilibrium with a mixture of gases with partial pressures in the array `p`. 
+    The material is now in equilibrium with a mixture of gases with partial pressures in the array `p`.
+
+    Pass a list of pure-component adsorption isotherms `isotherms`.
     
-    :param p: Array partial pressures of gas components, e.g. [.5, .5]
-    :param isotherms: list of pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
+    :param p: Array or list partial pressures of gas components, e.g. [.5, .5]
+    :param isotherms: list pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
     :param verboseflag: Bool print stuff
 
-    :return: predicted uptakes of each component
+    :return: q: predicted uptakes of each component
     :rtype: Array
     """
     p = np.array(p)
@@ -100,14 +102,16 @@ def IAST(p, isotherms, verboseflag=False):
 
 def reverse_IAST(z, P_total, isotherms, verboseflag=False):
     """
-    Perform reverse IAST to predict gas phase composition that will yield adsorbed mole fractions z.
+    Perform reverse IAST to predict gas phase composition at total pressure `P_total` that will yield adsorbed mole fractions `z`.
+
+    Pass a list of pure-component adsorption isotherms `isotherms`.
     
     :param z: Array desired adsorbed mole fractions, e.g. [.5, .5]
     :param P_total: Float total bulk gas pressure
     :param isotherms: list of pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
     :param verboseflag: Bool print stuff
 
-    :return: y, q: bulk gas mole fractions that yield desired adsorbed mole fractions (z) at P_total, component loadings
+    :return: y, q: bulk gas mole fractions that yield desired adsorbed mole fractions `z` at `P_total`, component loadings
     :rtype: Array, Array
     """
     n_components = len(isotherms)  # number of components in the mixture

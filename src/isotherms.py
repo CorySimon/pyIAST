@@ -3,6 +3,7 @@
 #   Author: CoryMSimon@gmail.com
 ###
 __author__ = 'Cory M. Simon'
+__all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "InterpolatorIsotherm"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -13,14 +14,20 @@ import pandas as pd
 
 class LangmuirIsotherm:
     """
-    Langmuir isotherm object to store pure-component adsorption isotherm
+    Langmuir isotherm object to store pure-component adsorption isotherm.
 
-    :math:`M \frac{KP}{1+KP}`
+    The Langmuir adsorption isotherm is:
+
+    .. math::
+    
+        L(P) = M\\frac{KP}{1+KP},
+
+    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, and :math:`K` is the Langmuir constant.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None):
         """
-        Instantiation
+        Instantiation. A LangmuirIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
@@ -30,10 +37,13 @@ class LangmuirIsotherm:
         :rtype: LangmuirIsotherm
         """
         # store isotherm data in self
+        #: Pandas DataFrame on which isotherm was fit
         self.df = df
         if loading_key==None or pressure_key == None:
             raise Exception("Provide names of pressure and loading cols in dataframe")
+        #: name of loading column
         self.loading_key = loading_key
+        #: name of pressure column
         self.pressure_key = pressure_key
 
         def RSS(params):
@@ -63,12 +73,14 @@ class LangmuirIsotherm:
             raise Exception("Minimization of RSS for Langmuir isotherm fitting failed... Try a different guess.")
 
         # assign params
+        #: Langmuir constant K (units: 1 / pressure)
         self.K = opt_res.x[0]
+        #: Saturation loading (units: loading)
         self.M = opt_res.x[1]
 
     def loading(self, P):
         """
-        Given stored Langmuir parameters, compute loading at pressure P
+        Given stored Langmuir parameters, compute loading at pressure P.
 
         :param P: Float or Array pressure (in corresponding units as df in instantiation)
         :return: loading at pressure P (in corresponding units as df in instantiation)
@@ -78,10 +90,10 @@ class LangmuirIsotherm:
 
     def spreading_pressure(self, P):
         """
-        Calculate spreading pressure at a bulk gas pressure P
+        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: spreading pressure
+        :return: spreading pressure, :math:`\\Pi`
         :rtype: Float
         """
         return self.M * np.log(1.0 + self.K * P)
@@ -90,14 +102,20 @@ class LangmuirIsotherm:
 
 class QuadraticIsotherm:
     """
-    Quadratic isotherm object
+    Quadratic isotherm object to store pure-component isotherm.
+
+    The Quadratic adsorption isotherm is:
+
+    .. math::
     
-    :math:`M \frac{(K_a P + 2 K_b P)P}{1+K_aP+K_bP^2}`
+        L(P) = M \\frac{(K_a P + 2 K_b P)P}{1+K_aP+K_bP^2}
+
+    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is half of the saturation loading, and constants :math:`K_a` and :math:`K_b` are model coefficients.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None):
         """
-        Instantiation
+        Instantiation. A QuadraticIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
@@ -107,10 +125,13 @@ class QuadraticIsotherm:
         :rtype: QuadraticIsotherm 
         """
         # store isotherm data in self
+        #: Pandas DataFrame on which isotherm was fit
         self.df = df
         if loading_key==None or pressure_key == None:
             raise Exception("Provide names of pressure and loading cols in dataframe")
+        #: name of loading column
         self.loading_key = loading_key
+        #: name of pressure column
         self.pressure_key = pressure_key
 
         def RSS(params):
@@ -143,13 +164,16 @@ class QuadraticIsotherm:
             raise Exception("Minimization of RSS for Quadratic isotherm fitting failed... Try a different guess.")
 
         # assign params
+        #: isotherm coefficient (units: 1 / pressure)
         self.Ka = opt_res.x[0]
+        #: isotherm coefficient (units: 1 / pressure\ :superscript:`2`)
         self.Kb = opt_res.x[1]
+        #: Half of saturation loading (units: loading)
         self.M = opt_res.x[2]
 
     def loading(self, P):
         """
-        Given stored Quadratic isotherm parameters, compute loading at pressure P
+        Given stored Quadratic isotherm parameters, compute loading at pressure P.
 
         :param P: float pressure (in corresponding units as df in instantiation)
         :return: loading at pressure P (in corresponding units as df in instantiation)
@@ -159,22 +183,31 @@ class QuadraticIsotherm:
 
     def spreading_pressure(self, P):
         """
-        Calculate spreading pressure at a bulk gas pressure P
+        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: pi: float spreading pressure
+        :return: spreading pressure, :math:`\\Pi`
+        :rtype: Float
         """
         return self.M * np.log(1.0 + self.Ka * P + self.Kb * P ** 2)
 
 
 class InterpolatorIsotherm:
     """
-    Interpolator isotherm object
+    Interpolator isotherm object to store pure-component adsorption isotherm.
+
+    Here, the isotherm is characterized by linear interpolation of data.
+
+    Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.
+
+    Default for extrapolating isotherm beyond highest pressure is to fail. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None, fill_value=None):
         """
-        Instantiation
+        Instantiation. InterpolatorIsotherm is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. Contructs linear interpolator from `interp1d` function in Scipy during instantiation.
+
+        e.g. to extrapolate loading beyond highest pressure point as 100.0, pass `fill_value=100.0`.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
@@ -189,10 +222,13 @@ class InterpolatorIsotherm:
             df = pd.concat([pd.DataFrame({pressure_key:0.0, loading_key:0.0}, index=[0]), df])
 
         # store isotherm data in self
+        #: Pandas DataFrame on which isotherm was fit
         self.df = df.sort([pressure_key], ascending=True)
         if loading_key==None or pressure_key == None:
             raise Exception("Provide names of pressure and loading cols in dataframe")
+        #: name of loading column
         self.loading_key = loading_key
+        #: name of pressure column
         self.pressure_key = pressure_key
         
         if fill_value == None:
@@ -202,7 +238,7 @@ class InterpolatorIsotherm:
 
     def loading(self, P):
         """
-        Interpolate isotherm to compute loading at pressure P
+        Interpolate isotherm to compute loading at pressure P.
 
         :param P: float pressure (in corresponding units as df in instantiation)
         :return: loading at pressure P (in corresponding units as df in instantiation)
@@ -212,14 +248,16 @@ class InterpolatorIsotherm:
 
     def spreading_pressure(self, P):
         """
-        Calculate spreading pressure at a bulk gas pressure P
+        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
 
-        Use trapezoid rule on isotherm data points
+        Use trapezoid rule on isotherm data points to compute the reduced spreading pressure via the integral:
 
-        Spreading pressure :math`\Pi = \int_0^p q(\hat{p})/ \hat{p} d\hat{p}` 
+        .. math::
+
+            \\Pi(p) = \\int_0^p \\frac{q(\\hat{p})}{ \\hat{p}} d\\hat{p}
 
         :param P: float pressure (in corresponding units as df in instantiation)
-        :return: spreading pressure
+        :return: spreading pressure, :math:`\\Pi`
         :rtype: Float
         """
         # get all data points less than this P. Do not use P = 0.0, this will give nan.
@@ -240,7 +278,7 @@ class InterpolatorIsotherm:
 
 def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False):
     """
-    Plot isotherm data and fit
+    Plot isotherm data and fit using Matplotlib.
     
     :param isotherm: LangmuirIsotherm,QuadraticIsotherm,InterpolatorIsotherm the adsorption isotherm object
     :param withfit: Bool plot fit as well
