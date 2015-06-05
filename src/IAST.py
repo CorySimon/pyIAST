@@ -2,6 +2,7 @@ __author__ = 'Cory M. Simon'
 
 from isotherms import *
 import scipy.optimize
+import numpy as np
 
 
 def IAST(p, isotherms, verboseflag=False):

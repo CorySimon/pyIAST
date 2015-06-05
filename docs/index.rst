@@ -18,17 +18,23 @@ This code has three options to apply IAST to the pure component adsorption isoth
 Installation
 ============
 
-Clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the setup script:
+This code runs on Python 2.6 and 2.7 Clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
 
-.. code-block:: python
+.. code-block:: bash
    
-   python setup.py
+   python setup.py install
+
+If on Windows, run from a command prompt (Start --> Accessories):
+
+.. code-block:: bash
+
+   setup.py install
 
 ===
 Use
 ===
 
-As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
+Start up Python 2.6 or 2.7. The easiest way to do this is by installing [IPython Notebook](http://ipython.org/notebook.html). As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
 
 Simulated pure component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:
 
