@@ -34,7 +34,7 @@ If on Windows, run from a command prompt (Start --> Accessories):
 Use
 ===
 
-Start up Python 2.6 or 2.7. The easiest way to do this is by installing [IPython Notebook](http://ipython.org/notebook.html). As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
+Start up Python 2.6 or 2.7. I strongly recommend using [IPython Notebook](http://ipython.org/notebook.html). As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
 
 Simulated pure component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:
 
