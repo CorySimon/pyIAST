@@ -58,10 +58,12 @@ Use the `Pandas` package to load the pure component adsorption isotherms as Data
 .. code-block:: python
     
     import pandas as pd
-    df_Xe = pd.read_csv("IRMOF-1_clean_Xe_isotherm_298K.csv", skiprows=1)
-    df_Kr = pd.read_csv("IRMOF-1_clean_Kr_isotherm_298K.csv", skiprows=1)
+    df_Xe = pd.read_csv("IRMOF-1_Xe_isotherm_298K.csv")
+    df_Kr = pd.read_csv("IRMOF-1_Kr_isotherm_298K.csv")
 
 The units for pressure and loading in both DataFrames must be consistent; loading of gas must be in a molar quantity for IAST to apply (e.g. mmol/g or mmol/cm\ :superscript:`3`). The `IAST` package will then work with these units throughout. 
+
+To load data into a Pandas DataFrame that is of a different format, see the Pandas [documentation](http://pandas.pydata.org/).
 
 --------------------------
 Construct isotherm objects
