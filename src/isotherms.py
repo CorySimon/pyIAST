@@ -3,7 +3,7 @@
 #   Author: CoryMSimon@gmail.com
 ###
 __author__ = 'Cory M. Simon'
-__all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "InterpolatorIsotherm"]
+__all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "InterpolatorIsotherm", "plot_isotherm"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -290,7 +290,9 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False):
     if withfit:
         # array of pressures to plot model
         if xlogscale:
-            P = np.logspace(np.log(isotherm.df[isotherm.pressure_key].min()), np.log(isotherm.df[isotherm.pressure_key].max()), 200)
+            idx = isotherm.df[isotherm.pressure_key].values != 0.0
+            min_P = np.min(isotherm.df[isotherm.pressure_key].iloc[idx])
+            P = np.logspace(np.log(min_P), np.log(isotherm.df[isotherm.pressure_key].max()), 200)
             plt.plot(P, isotherm.loading(P))
         else:
             P = np.linspace(isotherm.df[isotherm.pressure_key].min(), isotherm.df[isotherm.pressure_key].max(), 200)
