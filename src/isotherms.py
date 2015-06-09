@@ -348,9 +348,9 @@ class InterpolatorIsotherm:
         self.pressure_key = pressure_key
         
         if fill_value == None:
-            self.interp1d = interp1d(df[pressure_key], df[loading_key])
+            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key])
         else:
-            self.interp1d = interp1d(df[pressure_key], df[loading_key], fill_value=fill_value, bounds_error=False)
+            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key], fill_value=fill_value, bounds_error=False)
 
     def loading(self, P):
         """
