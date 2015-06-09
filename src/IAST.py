@@ -94,10 +94,10 @@ def IAST(p, isotherms, verboseflag=False):
         for i in range(n_components):
             print "Component ", i
             print "\tp = ", p[i]
+            print "\tp^0 = ", p0[i]
             print "\tLoading: ", q[i]
-            print "\tz = ", z[i]
+            print "\tx = ", z[i]
             print "\tSpreading pressure = ", isotherms[i].spreading_pressure(p0[i])
-            print "\tPure component loading at same partial pressure = ", isotherms[i].loading(p[i])
 
     return q  # loadings [component 1, component 2, ...]. same units as in data
 
@@ -191,10 +191,10 @@ def reverse_IAST(z, P_total, isotherms, verboseflag=False):
         # print off loadings according to IAST and corresponding pure component loadings
         for i in range(n_components):
             print "Component ", i
-            print "\tDesired mole fraction in adsorbed phase, z = ", z[i]
+            print "\tDesired mole fraction in adsorbed phase, x = ", z[i]
             print "\tBulk gas mole fraction that gives this, y = ", y[i]
             print "\tSpreading pressure = ", isotherms[i].spreading_pressure(p0[i])
+            print "\tp^0 = ", p0[i]
             print "\tLoading: ", q[i]
-            print "\tPure component loading at same partial pressure = ", isotherms[i].loading(P_total * y[i])
 
     return y, q  # mole fractions in gas phase, component loadings

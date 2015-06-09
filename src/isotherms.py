@@ -376,20 +376,26 @@ class InterpolatorIsotherm:
         :return: spreading pressure, :math:`\\Pi`
         :rtype: Float
         """
-        # get all data points less than this P. Do not use P = 0.0, this will give nan.
-        idx = (self.df[self.pressure_key].values < P) & (self.df[self.pressure_key].values != 0.0)
+        # Get all data points that are at nonzero pressures
+        pressures = self.df[self.pressure_key].values[self.df[self.pressure_key].values != 0.0]
+        loadings = self.df[self.loading_key].values[self.df[self.pressure_key].values != 0.0]
+        
+        # approximate loading up to first pressure point with Henry's law
+        # loading = KH * P
+        # KH is the initial slope in the adsorption isotherm
+        KH = loadings[0] / pressures[0]
+       
+        # get all data points that are less than P 
+        idx = pressures < P
         if np.sum(idx) == 0:
-            # if this pressure is between 0 and first pressure point
-            l_array = float(self.loading(P))
-            return l_array / 2.0 # area of triangle starting at P = 0
+            # if this pressure is between 0 and first pressure point...
+            p_array = np.concatenate((np.array([0.0]), np.array([P])))  # array of pressures
+            integrand = np.concatenate((np.array([KH]), np.array([self.loading(P) / P])))  # array of loadings
+            return  np.trapz(integrand, x=p_array)
         else:
-            # (1/2 * p1 * [height=loading/p1]
-            # area of first triangle in integral, from 0 to first pressure point
-            A_first_triangle = self.df[self.loading_key].iloc[idx][0] / 2.0
-            p_array = np.concatenate((self.df[self.pressure_key].iloc[idx], np.array([P])))  # array of pressures
-            l_array = np.concatenate(
-                (self.df[self.loading_key].iloc[idx], np.array([self.loading(P)])))  # array of loadings
-            return np.trapz(l_array / p_array, x=p_array) + A_first_triangle
+            p_array = np.concatenate((np.array([0.0]), pressures[idx], np.array([P])))  # array of pressures
+            integrand = np.concatenate((np.array([KH]), loadings[idx] / pressures[idx], np.array([self.loading(P) / P])))  # array of loadings
+            return  np.trapz(integrand, x=p_array)
 
 
 class LangmuirFreundlichIsotherm:
