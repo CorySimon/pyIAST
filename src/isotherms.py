@@ -3,7 +3,7 @@
 #   Author: CoryMSimon@gmail.com
 ###
 __author__ = 'Cory M. Simon'
-__all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "BETIsotherm", "LangmuirFreundlichIsotherm", "InterpolatorIsotherm", "plot_isotherm"]
+__all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "BETIsotherm", "SipsIsotherm", "InterpolatorIsotherm", "plot_isotherm"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -398,11 +398,11 @@ class InterpolatorIsotherm:
             return  np.trapz(integrand, x=p_array)
 
 
-class LangmuirFreundlichIsotherm:
+class SipsIsotherm:
     """
-    Langmuir-Freundlich isotherm object to store pure-component adsorption isotherm.
+    Sips isotherm object to store pure-component adsorption isotherm.
 
-    The Langmuir-Freundlich adsorption isotherm is:
+    The Sips adsorption isotherm is:
 
     .. math::
     
@@ -413,14 +413,14 @@ class LangmuirFreundlichIsotherm:
 
     def __init__(self, df, loading_key=None, pressure_key=None):
         """
-        Instantiation. A LangmuirFreundlichIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
+        Instantiation. A SipsIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
 
         :return: self
-        :rtype: LangmuirFreundlichIsotherm
+        :rtype: SipsIsotherm
         """
         # store isotherm data in self
         #: Pandas DataFrame on which isotherm was fit
@@ -434,7 +434,7 @@ class LangmuirFreundlichIsotherm:
 
         def RSS(params):
             """
-            Residual Sum of Squares between Langmuir-Freundlich model and data in df
+            Residual Sum of Squares between Sips model and data in df
             :param params: Array params = [K, M, n]
             M: float saturation loading (units: loading)
             K: float Langmuir constant (units: 1/pressure)
@@ -472,7 +472,7 @@ class LangmuirFreundlichIsotherm:
 
     def loading(self, P):
         """
-        Given stored Langmuir-Freundlich parameters, compute loading at pressure P.
+        Given stored Sips parameters, compute loading at pressure P.
 
         :param P: Float or Array pressure (in corresponding units as df in instantiation)
         :return: loading at pressure P (in corresponding units as df in instantiation)
