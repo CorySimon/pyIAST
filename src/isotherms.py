@@ -408,7 +408,7 @@ class SipsIsotherm:
     
         L(P) = M\\frac{K^nP^n}{1+K^nP^n},
 
-    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, :math:`K` is the Langmuir constant, and :math:`n` is the index of heterogeneity.
+    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, :math:`K` is the equilibrium constant, and :math:`n` is the index of heterogeneity between 0 and 1.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None):

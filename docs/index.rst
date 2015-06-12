@@ -3,22 +3,27 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Documentation for IAST Package
-================================
+Documentation for pyIAST
+========================
 
-This Python package takes pure component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms. Ideal Adsorbed Solution Theory (IAST) is the framework used to predict the mixture adsorption isotherm from the pure component adsorption isotherms.
+This Python package, `pyIAST <https://github.com/CorySimon/IAST)>`_, takes pure-component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms using the Ideal Adsorbed Solution Theory (IAST).
 
-This code has three options to apply IAST to the pure component adsorption isotherms:
+This code has five options to characterizing the pure-component adsorption isotherms from simulated or experimental data:
 
 1. Fit a Langmuir isotherm model
 2. Fit a quadratic isotherm model
-3. Use linear interpolation (numerical quadrature for spreading pressures)
+3. Fit a BET isotherm model
+4. Fit a Sips isotherm model
+5. Use linear interpolation (numerical quadrature for spreading pressures)
+
+If you would like an additional model implemented, submit an issue on `Github <https://github.com/CorySimon/IAST>`_.
+
 
 ============
 Installation
 ============
 
-This code runs on Python 2.6 and 2.7 Clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
+This code runs on Python 2.6 and 2.7. Clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
 
 .. code-block:: bash
    
@@ -34,9 +39,9 @@ If on Windows, run from a command prompt (Start --> Accessories):
 Use
 ===
 
-Start up Python 2.6 or 2.7. I strongly recommend using [IPython Notebook](http://ipython.org/notebook.html). As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
+Start up Python 2.6 or 2.7. I strongly recommend using `IPython Notebook <http://ipython.org/notebook.html>`_. As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
 
-Simulated pure component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:
+Simulated pure-component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:
 
 - `IRMOF-1_clean_Xe_isotherm_298K.csv`
 - `IRMOF-1_clean_Kr_isotherm_298K.csv`
@@ -50,10 +55,10 @@ First, import the `IAST` package:
    import IAST
 
 -----------------------------------
-Import the pure component isotherms
+Import the pure-component isotherms
 -----------------------------------
 
-Use the `Pandas` package to load the pure component adsorption isotherms as DataFrames:
+Use the `Pandas` package to load the pure-component adsorption isotherms as DataFrames:
 
 .. code-block:: python
     
@@ -69,7 +74,7 @@ To load data into a Pandas DataFrame that is of a different format, see the Pand
 Construct isotherm objects
 --------------------------
 
-We separate the process of characterizing the pure component adsorption isotherms from performing IAST calculations. Construct the models by passing the DataFrame with the pure component adsorption isotherm and the names of the columns that correspond to the loading and pressure.
+We separate the process of characterizing the pure-component adsorption isotherms from performing IAST calculations. Construct the models by passing the DataFrame with the pure-component adsorption isotherm and the names of the columns that correspond to the loading and pressure.
 
 * Langmuir isotherm model
 
@@ -82,12 +87,18 @@ We separate the process of characterizing the pure component adsorption isotherm
                                         loading_key="Loading(mol/m3)", 
                                         pressure_key="Pressure(bar)")
 
-You may see the model parameters identified by least squares fitting by:
+You may access the model parameters identified by least squares fitting by:
 
 .. code-block:: python
 
    xe_isotherm.M  # saturation loading (units: mol/m3 here)
    xe_isotherm.K  # Langmuir constant (units : 1/bar here)
+
+or print them automatically by:
+
+.. code-block:: python
+   
+   xe_isotherm.print_params()
 
 * Quadratic isotherm model
 
@@ -108,9 +119,31 @@ You may see the model parameters identified by least squares fitting by:
    xe_isotherm.Ka  # isotherm constant (units : 1/bar here)
    xe_isotherm.Kb  # isotherm constant (units : 1/bar^2 here)
 
+* BET isotherm model
+
+.. code-block:: python
+
+    xe_isotherm = IAST.BETIsotherm(df_Xe, 
+                                        loading_key="Loading(mol/m3)", 
+                                        pressure_key="Pressure(bar)")
+    kr_isotherm = IAST.BETIsotherm(df_Kr, 
+                                        loading_key="Loading(mol/m3)", 
+                                        pressure_key="Pressure(bar)")
+* Sips isotherm model
+
+.. code-block:: python
+
+    xe_isotherm = IAST.SipsIsotherm(df_Xe, 
+                                        loading_key="Loading(mol/m3)", 
+                                        pressure_key="Pressure(bar)")
+    kr_isotherm = IAST.SipsIsotherm(df_Kr, 
+                                        loading_key="Loading(mol/m3)", 
+                                        pressure_key="Pressure(bar)")
+
+
 * Linear interpolation model
 
-The linear interpolation model has an additional, optional argument `fill_value` that tells us what loading to assume when we attempt to extrapolate beyond the data point with the highest pressure. In this example, we assume that the loading at the highest pressure point is equal to the saturation loading. By default, `fill_value=None` and an error is thrown when the IAST code tries to extrapolate loading beyond the highest pressure point in the pure component adsorption isotherm.
+The linear interpolation model has an additional, optional argument `fill_value` that tells us what loading to assume when we attempt to extrapolate beyond the data point with the highest pressure. In this example, we assume that the loading at the highest pressure point is equal to the saturation loading. By default, `fill_value=None` and an error is thrown when the IAST code tries to extrapolate loading beyond the highest pressure point in the pure-component adsorption isotherm.
 
 .. code-block:: python
 
@@ -147,9 +180,9 @@ or the reduced spreading pressure via:
 Peform IAST calculation
 -----------------------
 
-Given the pure component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a *mixture* of gases.
+Given the pure-component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a *mixture* of gases.
 
-As an example, given the pure component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure component isotherms] at a 20/80 mol % Xe/Kr mixture at a pressure of 1.0. To do this, we call:
+As an example, given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure-component isotherms] at a 20/80 mol % Xe/Kr mixture at a pressure of 1.0. To do this, we call:
 
 .. code-block:: python
     
@@ -164,7 +197,7 @@ Reverse IAST calculation
 
 In reverse IAST, we specify the mole fractions of gas in the *adsorbed* phase and the total bulk gas pressure, then calculate the bulk gas composition that yields these adsorbed mole fractions. This is useful e.g. in catalysis, where one seeks to control the composition of gas adsorbed in the material.
 
-As an example,  given the pure component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the bulk gas composition [at the same temperature as the pure component isotherms] that will yield a 20/80 mol % Xe/Kr mixture in the *adsorbed phase* at a total bulk gas pressure of 1.0. To do this, we call:
+As an example,  given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the bulk gas composition [at the same temperature as the pure-component isotherms] that will yield a 20/80 mol % Xe/Kr mixture in the *adsorbed phase* at a total bulk gas pressure of 1.0. To do this, we call:
 
 .. code-block:: python
     
@@ -182,7 +215,7 @@ Ideal Adsorbed Solution Theory was developed by Myers and Prausnitz:
 
 Myers, A. L., & Prausnitz, J. M. (1965). Thermodynamics of mixed‐gas adsorption. AIChE Journal, 11(1), 121-127.
     
-We follow the method outlined in the more accessible reference:
+In our IAST calculations, we follow the method outlined in the more accessible reference:
 
 Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms obeying ideal adsorbed solution theory. Chem. Eng. Technol. 2012, 35, No. 1, 102-108.
 
@@ -190,7 +223,7 @@ Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms ob
 Tests
 =====
 
-This code was tested using pure component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/test.ipynb>`_, and the files are in the `/test` directory.
+This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/test.ipynb>`_, and the files are in the `/test` directory.
 
 **TL;DR** The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
 
