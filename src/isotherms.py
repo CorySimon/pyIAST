@@ -40,22 +40,11 @@ class LangmuirIsotherm:
         #: Pandas DataFrame on which isotherm was fit
         self.df = df
         if loading_key==None or pressure_key == None:
-            raise Exception("Provide names of pressure and loading cols in dataframe")
+            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
         #: name of loading column
         self.loading_key = loading_key
         #: name of pressure column
         self.pressure_key = pressure_key
-
-        def RSS(params):
-            """
-            Residual Sum of Squares between Langmuir model and data in df
-            :param params: Array params = [K, M]
-            M: float saturation loading (units: loading)
-            K: float Langmuir constant (units: 1/pressure)
-            """
-            return np.sum((df[loading_key].values -
-                           params[1] * params[0] * df[pressure_key].values /
-                           (1.0 + params[0] * df[pressure_key].values)) ** 2)
 
         # for guess as starting point in minimizing RSS
         M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
@@ -64,19 +53,51 @@ class LangmuirIsotherm:
         K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
             M_guess - df[pressure_key].iloc[idx_min])
 
+        # Pre-allocate params as nan
+        #: Langmuir constant K (units: 1 / pressure)
+        self.K = np.nan
+        #: Saturation loading (units: loading)
+        self.M = np.nan
+        #: Root mean square error
+        self.RMSE = np.nan
+
+        self._fit(K_guess, M_guess)
+
+    def _fit(self, K_guess, M_guess):
+        """
+        Fit model to data using nonlinear optimization with least squares loss function.
+        Assigns params to self.
+
+        :param K_guess: float guess Langmuir constant (units: 1/pressure)
+        :param M_guess: float guess saturation loading (units: loading)
+        """
+        def RSS(params):
+            """
+            Residual Sum of Squares between Langmuir model and data in df
+            :param params: Array params = [K, M]
+            M: float saturation loading (units: loading)
+            K: float Langmuir constant (units: 1/pressure)
+            """
+            return np.sum((self.df[self.loading_key].values -
+                           params[1] * params[0] * self.df[self.pressure_key].values /
+                           (1.0 + params[0] * self.df[self.pressure_key].values)) ** 2)
+        
         # minimize RSS
         opt_res = scipy.optimize.minimize(RSS, [K_guess, M_guess], method='Nelder-Mead')
         if opt_res.success == False:
             print(opt_res.message)
             print "M_guess = ", M_guess
             print "K_guess = ", K_guess
-            raise Exception("Minimization of RSS for Langmuir isotherm fitting failed... Try a different guess.")
-
+            raise Exception("""Minimization of RSS for Langmuir isotherm fitting failed.
+                               Try a different starting point in the nonlinear optimization:
+                               LangmuirIsotherm._fit(K_guess, M_guess)
+                               where K_guess and M_guess are guesses for Langmuir constant
+                               and saturation loading""")
+        
         # assign params
-        #: Langmuir constant K (units: 1 / pressure)
         self.K = opt_res.x[0]
-        #: Saturation loading (units: loading)
         self.M = opt_res.x[1]
+        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
 
     def loading(self, P):
         """
@@ -104,7 +125,7 @@ class LangmuirIsotherm:
         """
         print "Langmuir K (1/pressure) = ", self.K
         print "Saturation loading, M (loading) = ", self.M
-
+        print "RMSE = ", self.RMSE
 
 
 class QuadraticIsotherm:
@@ -135,23 +156,11 @@ class QuadraticIsotherm:
         #: Pandas DataFrame on which isotherm was fit
         self.df = df
         if loading_key==None or pressure_key == None:
-            raise Exception("Provide names of pressure and loading cols in dataframe")
+            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
         #: name of loading column
         self.loading_key = loading_key
         #: name of pressure column
         self.pressure_key = pressure_key
-
-        def RSS(params):
-            """
-            Residual Sum of Squares between Quadratic isotherm model and data in df
-            :param params: Array params = [Ka, Kb, M]
-            M: float saturation loading (units: loading)
-            Ka, Kb: float Quadratic isotherm constants (units: 1/pressure, 1/pressure^2)
-            """
-            return np.sum((df[loading_key].values -
-                           params[2] * (params[0] + 2.0 * params[1] * df[pressure_key].values) * df[
-                               pressure_key].values /
-                           (1.0 + params[0] * df[pressure_key].values + params[1] * df[pressure_key].values ** 2)) ** 2)
 
         # for guess as starting point in minimizing RSS
         M_guess = np.max(df[pressure_key].values) / 2.0  # guess saturation loading to be highest loading
@@ -161,6 +170,37 @@ class QuadraticIsotherm:
             M_guess - df[pressure_key].iloc[idx_min])
         Kb_guess = 0.000000001  # guess as Langmuir adsorption isotherm at first
 
+        # pre-allocate params as nan
+        #: isotherm coefficient (units: 1 / pressure)
+        self.Ka = np.nan
+        #: isotherm coefficient (units: 1 / pressure\ :superscript:`2`)
+        self.Kb = np.nan
+        #: Half of saturation loading (units: loading)
+        self.M = np.nan
+        #: Root mean square error
+        self.RMSE = np.nan
+
+        self._fit(Ka_guess, Kb_guess, M_guess)
+        
+    
+    def _fit(self, Ka_guess, Kb_guess, M_guess):
+        """
+        Fit model to data using nonlinear optimization with least squares loss function.
+        Assigns params to self.
+
+        :param Ka_guess: float guess for Quadratic isotherm constant (units: 1/pressure)
+        :param Kb_guess: float guess for Quadratic isotherm constant (units: 1/pressure^2)
+        :param M_guess: float guess for saturation loading (units: loading)
+        """
+        def RSS(params):
+            """
+            Residual Sum of Squares between Quadratic isotherm model and data in df
+            :param params: Array params = [Ka, Kb, M]
+            """
+            return np.sum((self.df[self.loading_key].values -
+                           params[2] * (params[0] + 2.0 * params[1] * self.df[self.pressure_key].values) * self.df[
+                               self.pressure_key].values /
+                           (1.0 + params[0] * self.df[self.pressure_key].values + params[1] * self.df[self.pressure_key].values ** 2)) ** 2)
         # minimize RSS
         opt_res = scipy.optimize.minimize(RSS, [Ka_guess, Kb_guess, M_guess], method='Nelder-Mead')
         if opt_res.success == False:
@@ -168,15 +208,17 @@ class QuadraticIsotherm:
             print "M_guess = ", M_guess
             print "Ka_guess = ", Ka_guess
             print "Kb_guess = ", Kb_guess
-            raise Exception("Minimization of RSS for Quadratic isotherm fitting failed... Try a different guess.")
-
-        # assign params
-        #: isotherm coefficient (units: 1 / pressure)
+            raise Exception("""Minimization of RSS for Quadratic isotherm fitting failed.
+                               Try a different starting point in the nonlinear optimization:
+                               QuadraticIsotherm._fit(Ka_guess, Kb_guess, M_guess)
+                               where Ka_guess, Kb_guess, and M_guess are guesses for Quadratic isotherm parameters.
+                               """)
+        
+        # assign parameters
         self.Ka = opt_res.x[0]
-        #: isotherm coefficient (units: 1 / pressure\ :superscript:`2`)
         self.Kb = opt_res.x[1]
-        #: Half of saturation loading (units: loading)
         self.M = opt_res.x[2]
+        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
 
     def loading(self, P):
         """
@@ -205,6 +247,7 @@ class QuadraticIsotherm:
         print "Ka (1/pressure) = ", self.Ka
         print "Kb (1/pressure) = ", self.Kb
         print "M (loading) = ", self.M
+        print "RMSE = ", self.RMSE
 
 
 class BETIsotherm:
@@ -235,24 +278,11 @@ class BETIsotherm:
         #: Pandas DataFrame on which isotherm was fit
         self.df = df
         if loading_key==None or pressure_key == None:
-            raise Exception("Provide names of pressure and loading cols in dataframe")
+            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
         #: name of loading column
         self.loading_key = loading_key
         #: name of pressure column
         self.pressure_key = pressure_key
-
-        def RSS(params):
-            """
-            Residual Sum of Squares between Langmuir model and data in df
-            :param params: Array params = [K_A, K_B, M]
-            K_A: float Langmuir constant for first layer (units: 1/pressure)
-            K_B: float Langmuir constant for > first layer (units: 1/pressure)
-            M: float saturation loading of first layer (units: loading)
-            """
-            return np.sum((df[loading_key].values -
-                           params[2] * params[0] * df[pressure_key].values /
-                           (1.0 - params[1] * df[pressure_key].values) /
-                           (1.0 - params[1] * df[pressure_key].values + params[0] * df[pressure_key].values)) ** 2)
 
         # for guess as starting point in minimizing RSS
         M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
@@ -262,6 +292,41 @@ class BETIsotherm:
             M_guess - df[pressure_key].iloc[idx_min])
         Kb_guess = .001 * Ka_guess  # guess small
 
+        # pre-allocate params as nan
+        #: Langmuir constant of first layer (units: 1 / pressure)
+        self.Ka = np.nan
+        #: Langmuir constant of second and higher layers (units: 1 / pressure)
+        self.Kb = np.nan
+        #: Saturation loading of first layer (units: loading)
+        self.M = np.nan
+        #: Root mean square error
+        self.RMSE = np.nan
+
+        self._fit(Ka_guess, Kb_guess, M_guess)
+
+    
+    def _fit(self, Ka_guess, Kb_guess, M_guess):
+        """
+        Fit model to data using nonlinear optimization with least squares loss function.
+        Assigns params to self.
+
+        :param Ka_guess: float guess for Langmuir constant for first layer (units: 1/pressure)
+        :param Kb_guess: float guess for Langmuir constant for > first layer (units: 1/pressure)
+        :param M_guess: float guess for saturation loading of first layer (units: loading)
+        """
+        def RSS(params):
+            """
+            Residual Sum of Squares between Langmuir model and data in df
+            :param params: Array params = [K_A, K_B, M]
+            K_A: float Langmuir constant for first layer (units: 1/pressure)
+            K_B: float Langmuir constant for > first layer (units: 1/pressure)
+            M: float saturation loading of first layer (units: loading)
+            """
+            return np.sum((self.df[self.loading_key].values -
+                           params[2] * params[0] * self.df[self.pressure_key].values /
+                           (1.0 - params[1] * self.df[self.pressure_key].values) /
+                           (1.0 - params[1] * self.df[self.pressure_key].values + params[0] * self.df[self.pressure_key].values)) ** 2)
+        
         # minimize RSS
         opt_res = scipy.optimize.minimize(RSS, [Ka_guess, Kb_guess, M_guess], method='Nelder-Mead')
         if opt_res.success == False:
@@ -269,15 +334,18 @@ class BETIsotherm:
             print "M_guess = ", M_guess
             print "Ka_guess = ", Ka_guess
             print "Kb_guess = ", Kb_guess
-            raise Exception("Minimization of RSS for Langmuir isotherm fitting failed... Try a different guess.")
+            raise Exception("""Minimization of RSS for BET isotherm fitting failed.
+                               Try a different starting point in the nonlinear optimization:
+                               BETIsotherm._fit(Ka_guess, Kb_guess, M_guess)
+                               where Ka_guess, Kb_guess, and M_guess are guesses for BET isotherm parameters.
+                               """)
 
         # assign params
-        #: Langmuir constant of first layer (units: 1 / pressure)
         self.Ka = opt_res.x[0]
-        #: Langmuir constant of second and higher layers (units: 1 / pressure)
         self.Kb = opt_res.x[1]
-        #: Saturation loading of first layer (units: loading)
         self.M = opt_res.x[2]
+        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
+
 
     def loading(self, P):
         """
@@ -306,6 +374,7 @@ class BETIsotherm:
         print "Ka (1/pressure) = ", self.Ka
         print "Kb (1/pressure) = ", self.Kb
         print "M (loading) = ", self.M
+        print "RMSE = ", self.RMSE
 
 
 class InterpolatorIsotherm:
@@ -341,7 +410,7 @@ class InterpolatorIsotherm:
         #: Pandas DataFrame on which isotherm was fit
         self.df = df.sort([pressure_key], ascending=True)
         if loading_key==None or pressure_key == None:
-            raise Exception("Provide names of pressure and loading cols in dataframe")
+            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
         #: name of loading column
         self.loading_key = loading_key
         #: name of pressure column
@@ -350,7 +419,8 @@ class InterpolatorIsotherm:
         if fill_value == None:
             self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key])
         else:
-            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key], fill_value=fill_value, bounds_error=False)
+            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key],
+                                     fill_value=fill_value, bounds_error=False)
 
     def loading(self, P):
         """
@@ -426,7 +496,7 @@ class SipsIsotherm:
         #: Pandas DataFrame on which isotherm was fit
         self.df = df
         if loading_key==None or pressure_key == None:
-            raise Exception("Provide names of pressure and loading cols in dataframe")
+            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
         #: name of loading column
         self.loading_key = loading_key
         #: name of pressure column
@@ -497,6 +567,7 @@ class SipsIsotherm:
         print "Langmuir K (1/pressure) = ", self.K
         print "Saturation loading, M (loading) = ", self.M
         print "Index of heterogeneity n = ", self.n
+        print "RMSE = ", self.RMSE
 
 
 def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False):
