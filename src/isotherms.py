@@ -455,17 +455,30 @@ class InterpolatorIsotherm:
         # KH is the initial slope in the adsorption isotherm
         KH = loadings[0] / pressures[0]
        
-        # get all data points that are less than P 
-        idx = pressures < P
-        if np.sum(idx) == 0:
+        # get how many of the points are less than pressure P
+        n_points = np.sum(pressures < P)
+
+        if n_points == 0:
             # if this pressure is between 0 and first pressure point...
-            p_array = np.concatenate((np.array([0.0]), np.array([P])))  # array of pressures
-            integrand = np.concatenate((np.array([KH]), np.array([self.loading(P) / P])))  # array of loadings
-            return  np.trapz(integrand, x=p_array)
+            return KH * P  # \int_0^P KH P /P dP = KH * P ...
         else:
-            p_array = np.concatenate((np.array([0.0]), pressures[idx], np.array([P])))  # array of pressures
-            integrand = np.concatenate((np.array([KH]), loadings[idx] / pressures[idx], np.array([self.loading(P) / P])))  # array of loadings
-            return  np.trapz(integrand, x=p_array)
+            # P > first pressure point
+            area = loadings[0]  # area of first segment \int_0^P_1 n(P)/P dP
+            
+            # get area between P_1 and P_k, where P_k < P < P_{k+1} 
+            for i in range(n_points - 1):
+                # linear interpolation of isotherm data
+                slope = (loadings[i+1] - loadings[i]) / (pressures[i+1] - pressures[i])
+                intercept = loadings[i] - slope * pressures[i]
+                # add area of this segment
+                area += slope * (pressures[i+1] - pressures[i]) + intercept * np.log(pressures[i+1] / pressures[i])
+            
+            # finally, area of last segment
+            slope = (self.loading(P) - loadings[n_points-1]) / (P - pressures[n_points-1])
+            intercept = loadings[n_points-1] - slope * pressures[n_points-1]
+            area += slope * (P - pressures[n_points-1]) + intercept * np.log(P / pressures[n_points-1])
+            
+            return area
 
 
 class SipsIsotherm:
