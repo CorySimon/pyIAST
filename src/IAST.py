@@ -58,7 +58,7 @@ def IAST(p, isotherms, verboseflag=False):
     # solve for mole fractions in adsorbed phase by equating spreading pressures
     guess = p / np.sum(p)
     n_tries = 0  # try with many different guesses until result found
-    while n_tries < 10:
+    while n_tries < 100:
      #     res = scipy.optimize.root(spreading_pressure_differences, guess[:-1])
         z = scipy.optimize.fsolve(spreading_pressure_differences, guess[:-1])
 
@@ -75,9 +75,9 @@ def IAST(p, isotherms, verboseflag=False):
     if ((np.sum(z < 0.0) != 0) | (np.sum(z > 1.0) != 0)):
         print "Tried %d times" % n_tries
         for i in range(n_components):
-            print "\tz[%d] = %f\n" % (i, z[i])
-            print "\tGuess: ", guess
-        raise Ezception("z not in [0,1], solution infeasible...")
+            print "\tz[%d] = %f" % (i, z[i])
+            print "\tGuess: ", guess[i]
+        raise Exception("z not in [0,1], solution infeasible...")
 
     p0 = p / z
 

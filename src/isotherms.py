@@ -25,13 +25,15 @@ class LangmuirIsotherm:
     where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, and :math:`K` is the Langmuir constant.
     """
 
-    def __init__(self, df, loading_key=None, pressure_key=None):
+    def __init__(self, df, loading_key=None, pressure_key=None, K_guess=None, M_guess=None):
         """
         Instantiation. A LangmuirIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
+        :param K_guess: float guess Langmuir constant (units: 1/pressure)
+        :param M_guess: float guess saturation loading (units: loading)
 
         :return: self
         :rtype: LangmuirIsotherm
@@ -46,12 +48,14 @@ class LangmuirIsotherm:
         #: name of pressure column
         self.pressure_key = pressure_key
 
-        # for guess as starting point in minimizing RSS
-        M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
-        # guess K using M_guess and lowest pressure point
-        idx_min = np.argmin(df[loading_key].values)
-        K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-            M_guess - df[pressure_key].iloc[idx_min])
+        # default guesses as starting point in minimizing RSS
+        if M_guess == None:
+            M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
+        if K_guess == None:
+            # guess K using M_guess and lowest pressure point
+            idx_min = np.argmin(df[loading_key].values)
+            K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
+                M_guess - df[pressure_key].iloc[idx_min])
 
         # Pre-allocate params as nan
         #: Langmuir constant K (units: 1 / pressure)
@@ -89,10 +93,10 @@ class LangmuirIsotherm:
             print "M_guess = ", M_guess
             print "K_guess = ", K_guess
             raise Exception("""Minimization of RSS for Langmuir isotherm fitting failed.
-                               Try a different starting point in the nonlinear optimization:
-                               LangmuirIsotherm._fit(K_guess, M_guess)
-                               where K_guess and M_guess are guesses for Langmuir constant
-                               and saturation loading""")
+            Try a different starting point in the nonlinear optimization
+            by passing K_guess and M_guess to the constructor,
+            where K_guess and M_guess are guesses for Langmuir constant
+            and saturation loading""")
         
         # assign params
         self.K = opt_res.x[0]
@@ -141,13 +145,16 @@ class QuadraticIsotherm:
     where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is half of the saturation loading, and constants :math:`K_a` and :math:`K_b` are model coefficients.
     """
 
-    def __init__(self, df, loading_key=None, pressure_key=None):
+    def __init__(self, df, loading_key=None, pressure_key=None, Ka_guess=None, Kb_guess=None, M_guess=None):
         """
         Instantiation. A QuadraticIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
+        :param Ka_guess: float guess for Quadratic isotherm constant (units: 1/pressure)
+        :param Kb_guess: float guess for Quadratic isotherm constant (units: 1/pressure^2)
+        :param M_guess: float guess for saturation loading (units: loading)
 
         :return: self
         :rtype: QuadraticIsotherm 
@@ -162,13 +169,16 @@ class QuadraticIsotherm:
         #: name of pressure column
         self.pressure_key = pressure_key
 
-        # for guess as starting point in minimizing RSS
-        M_guess = np.max(df[pressure_key].values) / 2.0  # guess saturation loading to be highest loading
+        # default guesses as starting point in minimizing RSS
+        if M_guess == None:
+            M_guess = np.max(df[pressure_key].values) / 2.0  # guess saturation loading to be highest loading
         # guess K using M_guess and lowest pressure point
-        idx_min = np.argmin(df[loading_key].values)
-        Ka_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-            M_guess - df[pressure_key].iloc[idx_min])
-        Kb_guess = 0.000000001  # guess as Langmuir adsorption isotherm at first
+        if Ka_guess == None:
+            idx_min = np.argmin(df[loading_key].values)
+            Ka_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
+                M_guess - df[pressure_key].iloc[idx_min])
+        if Kb_guess == None:
+            Kb_guess = 0.000000001  # guess as Langmuir adsorption isotherm at first
 
         # pre-allocate params as nan
         #: isotherm coefficient (units: 1 / pressure)
@@ -209,10 +219,10 @@ class QuadraticIsotherm:
             print "Ka_guess = ", Ka_guess
             print "Kb_guess = ", Kb_guess
             raise Exception("""Minimization of RSS for Quadratic isotherm fitting failed.
-                               Try a different starting point in the nonlinear optimization:
-                               QuadraticIsotherm._fit(Ka_guess, Kb_guess, M_guess)
-                               where Ka_guess, Kb_guess, and M_guess are guesses for Quadratic isotherm parameters.
-                               """)
+            Try a different starting point in the nonlinear optimization:
+            by passing Ka_guess, Kb_guess, and M_guess to the constructor,
+            where Ka_guess, Kb_guess, and M_guess are guesses for Quadratic isotherm parameters.
+            """)
         
         # assign parameters
         self.Ka = opt_res.x[0]
@@ -263,7 +273,7 @@ class BETIsotherm:
     where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the number of adsorption sites on the bare surface, :math:`K_A` is the Langmuir constant for the bare surface, and :math:`K_B` is the Langmuir constant for the second and higher layers.
     """
 
-    def __init__(self, df, loading_key=None, pressure_key=None):
+    def __init__(self, df, loading_key=None, pressure_key=None, Ka_guess=None, Kb_guess=None, M_guess=None):
         """
         Instantiation. A BETIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
 
@@ -284,13 +294,16 @@ class BETIsotherm:
         #: name of pressure column
         self.pressure_key = pressure_key
 
-        # for guess as starting point in minimizing RSS
-        M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
-        # guess K_A using M_guess and lowest pressure point
-        idx_min = np.argmin(df[loading_key].values)
-        Ka_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-            M_guess - df[pressure_key].iloc[idx_min])
-        Kb_guess = .001 * Ka_guess  # guess small
+        # default guesses as starting point in minimizing RSS
+        if M_guess == None:
+            M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
+        if Ka_guess == None:
+            # guess K_A using M_guess and lowest pressure point
+            idx_min = np.argmin(df[loading_key].values)
+            Ka_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
+                M_guess - df[pressure_key].iloc[idx_min])
+        if Kb_guess == None:
+            Kb_guess = .001 * Ka_guess  # guess small
 
         # pre-allocate params as nan
         #: Langmuir constant of first layer (units: 1 / pressure)
@@ -335,10 +348,10 @@ class BETIsotherm:
             print "Ka_guess = ", Ka_guess
             print "Kb_guess = ", Kb_guess
             raise Exception("""Minimization of RSS for BET isotherm fitting failed.
-                               Try a different starting point in the nonlinear optimization:
-                               BETIsotherm._fit(Ka_guess, Kb_guess, M_guess)
-                               where Ka_guess, Kb_guess, and M_guess are guesses for BET isotherm parameters.
-                               """)
+            Try a different starting point in the nonlinear optimization
+            by passing Ka_guess, Kb_guess, and M_guess into the constructor.
+            where Ka_guess, Kb_guess, and M_guess are guesses for BET isotherm parameters.
+            """)
 
         # assign params
         self.Ka = opt_res.x[0]
@@ -421,6 +434,7 @@ class InterpolatorIsotherm:
         else:
             self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key],
                                      fill_value=fill_value, bounds_error=False)
+        self.fill_value = fill_value
 
     def loading(self, P):
         """
@@ -446,6 +460,24 @@ class InterpolatorIsotherm:
         :return: spreading pressure, :math:`\\Pi`
         :rtype: Float
         """
+        # throw exception if interpolating outside the range.
+        if (self.fill_value == None) & (P > self.df[self.pressure_key].max()):
+            raise Exception("""To compute the spreading pressure at this bulk gas pressure,
+            we would need to extrapolate the isotherm since this pressure is outside
+            the range of the highest pressure in your pure-component isotherm data, %f.
+           
+            At present, your InterpolatorIsotherm object is set to throw an exception
+            when this occurs, as we do not have data outside this pressure range to
+            characterize the isotherm.
+           
+            Option 1: fit an analytical model to extrapolate the isotherm
+            Option 2: pass a fill_value to the construction of the InterpolatorIsotherm object.
+             Then, InterpolatorIsotherm will assume that the uptake beyond pressure %f is equal
+             to fill_value. This is reasonable if your isotherm data exhibits a plateu.
+            Option 3: Go back to the lab or computer to collect isotherm data at higher pressures.
+             (Extrapolation can be dangerous!)""" 
+           %  (self.df[self.pressure_key].max(), self.df[self.pressure_key].max()))
+
         # Get all data points that are at nonzero pressures
         pressures = self.df[self.pressure_key].values[self.df[self.pressure_key].values != 0.0]
         loadings = self.df[self.loading_key].values[self.df[self.pressure_key].values != 0.0]
@@ -494,13 +526,16 @@ class SipsIsotherm:
     where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, :math:`K` is the equilibrium constant, and :math:`n` is the index of heterogeneity between 0 and 1.
     """
 
-    def __init__(self, df, loading_key=None, pressure_key=None):
+    def __init__(self, df, loading_key=None, pressure_key=None, K_guess=None, M_guess=None, n_guess=None):
         """
         Instantiation. A SipsIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
+        :param K_guess: float guess Langmuir constant (units: 1/pressure)
+        :param M_guess: float guess saturation loading (units: loading)
+        :param n_guess: float guess for index of heterogeneity
 
         :return: self
         :rtype: SipsIsotherm
@@ -514,6 +549,39 @@ class SipsIsotherm:
         self.loading_key = loading_key
         #: name of pressure column
         self.pressure_key = pressure_key
+        
+        # Pre-allocate params as nan
+        #: Langmuir constant K (units: 1 / pressure)
+        self.K = np.nan
+        #: Saturation loading (units: loading)
+        self.M = np.nan
+        #: index of heterogeneity (unitless)
+        self.n = np.nan
+        #: Root mean square error
+        self.RMSE = np.nan
+        
+        # for guess as starting point in minimizing RSS
+        if M_guess == None:
+            M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
+        # guess K using M_guess and lowest pressure point
+        if K_guess == None:
+            idx_min = np.argmin(df[loading_key].values)
+            K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
+                M_guess - df[pressure_key].iloc[idx_min])
+        if n_guess == None:
+            n_guess = 1.0
+
+        self._fit(K_guess, M_guess, n_guess)
+
+    def _fit(self, K_guess, M_guess, n_guess):
+        """
+        Fit model to data using nonlinear optimization with least squares loss function.
+        Assigns params to self.
+
+        :param K_guess: float guess Langmuir constant (units: 1/pressure)
+        :param M_guess: float guess saturation loading (units: loading)
+        :param n_guess: float guess for index of heterogeneity
+        """
 
         def RSS(params):
             """
@@ -523,18 +591,10 @@ class SipsIsotherm:
             K: float Langmuir constant (units: 1/pressure)
             n: float index of heterogeneity
             """
-            KPn = (params[0] * df[pressure_key].values) ** params[2]
-            return np.sum((df[loading_key].values -
+            KPn = (params[0] * self.df[self.pressure_key].values) ** params[2]
+            return np.sum((self.df[self.loading_key].values -
                            params[1] * KPn /
                            (1.0 + KPn)) ** 2)
-
-        # for guess as starting point in minimizing RSS
-        M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
-        # guess K using M_guess and lowest pressure point
-        idx_min = np.argmin(df[loading_key].values)
-        K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-            M_guess - df[pressure_key].iloc[idx_min])
-        n_guess = 1.0
 
         # minimize RSS
         opt_res = scipy.optimize.minimize(RSS, [K_guess, M_guess, n_guess], method='Nelder-Mead')
@@ -543,15 +603,17 @@ class SipsIsotherm:
             print "M_guess = ", M_guess
             print "K_guess = ", K_guess
             print "n_guess = ", n_guess
-            raise Exception("Minimization of RSS for Langmuir isotherm fitting failed... Try a different guess.")
+            raise Exception("""Minimization of RSS for Sips isotherm fitting failed.
+            Try a different starting point in the nonlinear optimization
+            by passing K_guess, n_guess, and M_guess to the constructor,
+            where K_guess, n_guess, and M_guess are guesses for Langmuir constant,
+            index of hetereogeneity, and saturation loading""")
 
         # assign params
-        #: Langmuir constant K (units: 1 / pressure)
         self.K = opt_res.x[0]
-        #: Saturation loading (units: loading)
         self.M = opt_res.x[1]
-        #: index of heterogeneity (unitless)
         self.n = opt_res.x[2]
+        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
 
     def loading(self, P):
         """
