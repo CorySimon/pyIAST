@@ -5,7 +5,7 @@ import scipy.optimize
 import numpy as np
 
 
-def IAST(p, isotherms, verboseflag=False):
+def IAST(p, isotherms, verboseflag=False, warningoff=False):
     """
     Perform IAST calculation to predict multi-component adsorption isotherm from pure component adsorption isotherms.
     
@@ -16,6 +16,7 @@ def IAST(p, isotherms, verboseflag=False):
     :param p: Array or list partial pressures of gas components, e.g. [.5, .5]
     :param isotherms: list pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
     :param verboseflag: Bool print stuff
+    :param warningoff: Bool when False, warnings will print when the IAST calculation result required extrapolation of the pure-component adsorption isotherm beyond the highest pressure in the data
 
     :return: q: predicted uptakes of each component
     :rtype: Array
@@ -80,7 +81,7 @@ def IAST(p, isotherms, verboseflag=False):
         raise Exception("z not in [0,1], solution infeasible...")
 
     p0 = p / z
-
+    
     # solve for the total gas adsorbed
     denom = 0.0
     for i in range(n_components):
@@ -98,6 +99,15 @@ def IAST(p, isotherms, verboseflag=False):
             print "\tLoading: ", q[i]
             print "\tx = ", z[i]
             print "\tSpreading pressure = ", isotherms[i].spreading_pressure(p0[i])
+    # print warning if had to extrapolate isotherm in spreading pressure
+    if warningoff == False:
+        for i in range(n_components):
+            if p0[i] > isotherms[i].df[isotherms[i].pressure_key].max():
+                print """WARNING:
+                  Component %d: p0 = %f > %f, the highest pressure
+                  exhibited in the pure-component isotherm data. Thus,
+                  pyIAST had to extrapolate the isotherm data to achieve
+                  this IAST result.""" % (i, p0[i], isotherms[i].df[isotherms[i].pressure_key].max())
 
     return q  # loadings [component 1, component 2, ...]. same units as in data
 
@@ -196,5 +206,15 @@ def reverse_IAST(z, P_total, isotherms, verboseflag=False):
             print "\tSpreading pressure = ", isotherms[i].spreading_pressure(p0[i])
             print "\tp^0 = ", p0[i]
             print "\tLoading: ", q[i]
+    
+    # print warning if had to extrapolate isotherm in spreading pressure
+    if warningoff == False:
+        for i in range(n_components):
+            if p0[i] > isotherms[i].df[isotherms[i].pressure_key].max():
+                print """WARNING:
+                  Component %d: p0 = %f > %f, the highest pressure
+                  exhibited in the pure-component isotherm data. Thus,
+                  pyIAST had to extrapolate the isotherm data to achieve
+                  this IAST result.""" % (i, p0[i], isotherms[i].df[isotherms[i].pressure_key].max())
 
     return y, q  # mole fractions in gas phase, component loadings
