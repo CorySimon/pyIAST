@@ -410,7 +410,7 @@ class InterpolatorIsotherm:
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
-        :param fill_value: Float value to assume when interp1d goes outside bounds
+        :param fill_value: Float value of loading to assume when an attempt is made to interpolate at a pressure greater than the largest pressure observed in the data
 
         :return: self
         :rtype: InterpolatorIsotherm 
