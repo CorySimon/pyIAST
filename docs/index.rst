@@ -8,7 +8,7 @@ Documentation for pyIAST
 
 This Python package, `pyIAST <https://github.com/CorySimon/IAST)>`_, takes pure-component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms using the Ideal Adsorbed Solution Theory (IAST).
 
-This code has five options to characterizing the pure-component adsorption isotherms from simulated or experimental data:
+pyIAST has five options to characterize the pure-component adsorption isotherms from a set of simulated or experimental data points:
 
 1. Fit a Langmuir isotherm model
 2. Fit a quadratic isotherm model
@@ -18,12 +18,11 @@ This code has five options to characterizing the pure-component adsorption isoth
 
 If you would like an additional model implemented, submit an issue on `Github <https://github.com/CorySimon/IAST>`_.
 
-
 ============
 Installation
 ============
 
-This code runs on Python 2.6 and 2.7. Clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
+This code runs on Python 2.6 and 2.7. To install, clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
 
 .. code-block:: bash
    
@@ -46,7 +45,7 @@ Simulated pure-component adsorption isotherms at 298 K (from single componenent 
 - `IRMOF-1_clean_Xe_isotherm_298K.csv`
 - `IRMOF-1_clean_Kr_isotherm_298K.csv`
 
-We simulated binary mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and at different mixture conditions using dual-component grand-canonical Monte Carlo. This data is present in `mixture_Xe_Kr_IRMOF-1_clean_298K.csv`. We use IAST to reproduce this result.
+We simulated binary mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and 298 K at different mixture conditions using dual-component grand-canonical Monte Carlo. This data is present in `mixture_Xe_Kr_IRMOF-1_clean_298K.csv`. We use IAST to reproduce this result.
 
 First, import the `IAST` package:
 
@@ -58,7 +57,7 @@ First, import the `IAST` package:
 Import the pure-component isotherms
 -----------------------------------
 
-Use the `Pandas` package to load the pure-component adsorption isotherms as DataFrames:
+Use the `Pandas` package (`documentation for Pandas <http://pandas.pydata.org/>`_), to load the pure-component adsorption isotherms as DataFrames:
 
 .. code-block:: python
     
@@ -68,7 +67,7 @@ Use the `Pandas` package to load the pure-component adsorption isotherms as Data
 
 The units for pressure and loading in both DataFrames must be consistent; loading of gas must be in a molar quantity for IAST to apply (e.g. mmol/g or mmol/cm\ :superscript:`3`). The `IAST` package will then work with these units throughout. 
 
-To load data into a Pandas DataFrame that is of a different format, see the Pandas [documentation](http://pandas.pydata.org/).
+To load data into a Pandas DataFrame that is of a different format, see the `documentation for Pandas <http://pandas.pydata.org/>`_.
 
 --------------------------
 Construct isotherm objects
@@ -182,11 +181,14 @@ Peform IAST calculation
 
 Given the pure-component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a *mixture* of gases.
 
-As an example, given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure-component isotherms] at a 20/80 mol % Xe/Kr mixture at a pressure of 1.0. To do this, we call:
+As an example, given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure-component isotherms] in the presence of a 20/80 mol% Xe/Kr mixture at a pressure of 1.0 bar. To do this, we call:
 
 .. code-block:: python
     
-    p = [.2, .8]  # list/array of partial pressures
+    # list/array of partial pressures 
+    # (same units as in pure-component isotherms)
+    p = [.2, .8]  
+    # Perform IAST calculation. returns component loadings.
     q = IAST.IAST(p, [xe_isotherm, kr_isotherm], verboseflag=True)
 
 which will return `q`, an array of component loadings at these mixture conditions predicted by IAST. Entry 0 will correspond to Xe; entry 1 will correspond to Kr.
@@ -197,7 +199,7 @@ Reverse IAST calculation
 
 In reverse IAST, we specify the mole fractions of gas in the *adsorbed* phase and the total bulk gas pressure, then calculate the bulk gas composition that yields these adsorbed mole fractions. This is useful e.g. in catalysis, where one seeks to control the composition of gas adsorbed in the material.
 
-As an example,  given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the bulk gas composition [at the same temperature as the pure-component isotherms] that will yield a 20/80 mol % Xe/Kr mixture in the *adsorbed phase* at a total bulk gas pressure of 1.0. To do this, we call:
+As an example,  given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the bulk gas composition [at the same temperature as the pure-component isotherms] that will yield a 20/80 mol% Xe/Kr mixture in the *adsorbed phase* at a total bulk gas pressure of 1.0. To do this, we call:
 
 .. code-block:: python
     
@@ -223,16 +225,12 @@ Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms ob
 Tests
 =====
 
-This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/test.ipynb>`_, and the files are in the `/test` directory.
+This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/test.ipynb>`_, and the files for reproduction of this result are in the `/test` directory.
 
 **TL;DR** The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
 
 .. image:: validation.png
    :align: center
-
-==============================
-Some notes for troubleshooting
-==============================
 
 ===============================
 Class documentation and details
