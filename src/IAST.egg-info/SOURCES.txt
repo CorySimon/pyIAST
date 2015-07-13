@@ -1,6 +1,0 @@
-setup.py
-IAST.egg-info/PKG-INFO
-IAST.egg-info/SOURCES.txt
-IAST.egg-info/dependency_links.txt
-IAST.egg-info/requires.txt
-IAST.egg-info/top_level.txt
