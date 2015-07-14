@@ -143,7 +143,7 @@ class QuadraticIsotherm:
 
     .. math::
     
-        L(P) = M \\frac{(K_a P + 2 K_b P)P}{1+K_aP+K_bP^2}
+        L(P) = M \\frac{(K_a + 2 K_b P)P}{1+K_aP+K_bP^2}
 
     where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is half of the saturation loading, and constants :math:`K_a` and :math:`K_b` are model coefficients.
     """
@@ -401,7 +401,7 @@ class InterpolatorIsotherm:
 
     Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.
 
-    Default for extrapolating isotherm beyond highest pressure is to fail. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
+    Default for extrapolating isotherm beyond highest pressure in available data is to throw an exception. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None, fill_value=None):
@@ -441,7 +441,7 @@ class InterpolatorIsotherm:
 
     def loading(self, P):
         """
-        Interpolate isotherm to compute loading at pressure P.
+        Linearly interpolate isotherm to compute loading at pressure P.
 
         :param P: float pressure (in corresponding units as df in instantiation)
         :return: loading at pressure P (in corresponding units as df in instantiation)
@@ -453,11 +453,13 @@ class InterpolatorIsotherm:
         """
         Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
 
-        Use trapezoid rule on isotherm data points to compute the reduced spreading pressure via the integral:
+        Use numerical quadrature on isotherm data points to compute the reduced spreading pressure via the integral:
 
         .. math::
 
-            \\Pi(p) = \\int_0^p \\frac{q(\\hat{p})}{ \\hat{p}} d\\hat{p}
+            \\Pi(p) = \\int_0^p \\frac{q(\\hat{p})}{ \\hat{p}} d\\hat{p}.
+
+        In this integral, the isotherm :math:`q(\\hat{p})` is represented by a linear interpolation of the data.
 
         :param P: float pressure (in corresponding units as df in instantiation)
         :return: spreading pressure, :math:`\\Pi`
@@ -526,7 +528,7 @@ class SipsIsotherm:
     
         L(P) = M\\frac{K^nP^n}{1+K^nP^n},
 
-    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, :math:`K` is the equilibrium constant, and :math:`n` is the index of heterogeneity between 0 and 1.
+    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, :math:`K` is the equilibrium constant, and :math:`n \in (0,1]` is the index of heterogeneity.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None, K_guess=None, M_guess=None, n_guess=None):

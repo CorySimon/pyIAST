@@ -5,17 +5,19 @@ import scipy.optimize
 import numpy as np
 
 
-def IAST(p, isotherms, verboseflag=False):
+def IAST(p, isotherms, verboseflag=False, warningoff=False):
     """
     Perform IAST calculation to predict multi-component adsorption isotherm from pure component adsorption isotherms.
     
-    The material is now in equilibrium with a mixture of gases with partial pressures in the array `p`.
+    The material is now in equilibrium with a mixture of gases with partial pressures in the array `p` in units corresponding
+    to those passed in the list of isotherms.
 
     Pass a list of pure-component adsorption isotherms `isotherms`.
     
-    :param p: Array or list partial pressures of gas components, e.g. [.5, .5]
+    :param p: Array or list partial pressures of gas components, e.g. [5.0, 10.0] (bar)
     :param isotherms: list pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
     :param verboseflag: Bool print stuff
+    :param warningoff: Bool when False, warnings will print when the IAST calculation result required extrapolation of the pure-component adsorption isotherm beyond the highest pressure in the data
 
     :return: q: predicted uptakes of each component
     :rtype: Array
@@ -58,7 +60,7 @@ def IAST(p, isotherms, verboseflag=False):
     # solve for mole fractions in adsorbed phase by equating spreading pressures
     guess = p / np.sum(p)
     n_tries = 0  # try with many different guesses until result found
-    while n_tries < 10:
+    while n_tries < 100:
      #     res = scipy.optimize.root(spreading_pressure_differences, guess[:-1])
         z = scipy.optimize.fsolve(spreading_pressure_differences, guess[:-1])
 
@@ -75,12 +77,12 @@ def IAST(p, isotherms, verboseflag=False):
     if ((np.sum(z < 0.0) != 0) | (np.sum(z > 1.0) != 0)):
         print "Tried %d times" % n_tries
         for i in range(n_components):
-            print "\tz[%d] = %f\n" % (i, z[i])
-            print "\tGuess: ", guess
-        raise Ezception("z not in [0,1], solution infeasible...")
+            print "\tz[%d] = %f" % (i, z[i])
+            print "\tGuess: ", guess[i]
+        raise Exception("z not in [0,1], solution infeasible...")
 
     p0 = p / z
-
+    
     # solve for the total gas adsorbed
     denom = 0.0
     for i in range(n_components):
@@ -98,6 +100,15 @@ def IAST(p, isotherms, verboseflag=False):
             print "\tLoading: ", q[i]
             print "\tx = ", z[i]
             print "\tSpreading pressure = ", isotherms[i].spreading_pressure(p0[i])
+    # print warning if had to extrapolate isotherm in spreading pressure
+    if warningoff == False:
+        for i in range(n_components):
+            if p0[i] > isotherms[i].df[isotherms[i].pressure_key].max():
+                print """WARNING:
+                  Component %d: p0 = %f > %f, the highest pressure
+                  exhibited in the pure-component isotherm data. Thus,
+                  pyIAST had to extrapolate the isotherm data to achieve
+                  this IAST result.""" % (i, p0[i], isotherms[i].df[isotherms[i].pressure_key].max())
 
     return q  # loadings [component 1, component 2, ...]. same units as in data
 
@@ -196,5 +207,15 @@ def reverse_IAST(z, P_total, isotherms, verboseflag=False):
             print "\tSpreading pressure = ", isotherms[i].spreading_pressure(p0[i])
             print "\tp^0 = ", p0[i]
             print "\tLoading: ", q[i]
+    
+    # print warning if had to extrapolate isotherm in spreading pressure
+    if warningoff == False:
+        for i in range(n_components):
+            if p0[i] > isotherms[i].df[isotherms[i].pressure_key].max():
+                print """WARNING:
+                  Component %d: p0 = %f > %f, the highest pressure
+                  exhibited in the pure-component isotherm data. Thus,
+                  pyIAST had to extrapolate the isotherm data to achieve
+                  this IAST result.""" % (i, p0[i], isotherms[i].df[isotherms[i].pressure_key].max())
 
     return y, q  # mole fractions in gas phase, component loadings

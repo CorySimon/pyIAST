@@ -9,11 +9,12 @@ def IAST(p, isotherms, verboseflag=False, warningoff=False):
     """
     Perform IAST calculation to predict multi-component adsorption isotherm from pure component adsorption isotherms.
     
-    The material is now in equilibrium with a mixture of gases with partial pressures in the array `p`.
+    The material is now in equilibrium with a mixture of gases with partial pressures in the array `p` in units corresponding
+    to those passed in the list of isotherms.
 
     Pass a list of pure-component adsorption isotherms `isotherms`.
     
-    :param p: Array or list partial pressures of gas components, e.g. [.5, .5]
+    :param p: Array or list partial pressures of gas components, e.g. [5.0, 10.0] (bar)
     :param isotherms: list pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
     :param verboseflag: Bool print stuff
     :param warningoff: Bool when False, warnings will print when the IAST calculation result required extrapolation of the pure-component adsorption isotherm beyond the highest pressure in the data
