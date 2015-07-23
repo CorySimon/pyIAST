@@ -650,12 +650,13 @@ class SipsIsotherm:
         print "RMSE = ", self.RMSE
 
 
-def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False):
+def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False, P=None):
     """
     Plot isotherm data and fit using Matplotlib.
     
     :param isotherm: LangmuirIsotherm,QuadraticIsotherm,InterpolatorIsotherm the adsorption isotherm object
     :param withfit: Bool plot fit as well
+    :param P: numpy.array optional pressure array to pass for plotting
     :param xlogscale: Bool log-scale on x-axis
     :param ylogscale: Bool log-scale on y-axis
     """
@@ -663,14 +664,15 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False):
     fig = plt.figure()
     if withfit:
         # array of pressures to plot model
-        if xlogscale:
-            idx = isotherm.df[isotherm.pressure_key].values != 0.0
-            min_P = np.min(isotherm.df[isotherm.pressure_key].iloc[idx])
-            P = np.logspace(np.log(min_P), np.log(isotherm.df[isotherm.pressure_key].max()), 200)
-            plt.plot(P, isotherm.loading(P))
-        else:
-            P = np.linspace(isotherm.df[isotherm.pressure_key].min(), isotherm.df[isotherm.pressure_key].max(), 200)
-            plt.plot(P, isotherm.loading(P))
+        if P == None:
+            if xlogscale:
+                # do not include zero for log-scale
+                idx = isotherm.df[isotherm.pressure_key].values != 0.0
+                min_P = np.min(isotherm.df[isotherm.pressure_key].iloc[idx])
+                P = np.logspace(np.log(min_P), np.log(isotherm.df[isotherm.pressure_key].max()), 200)
+            else:
+                P = np.linspace(isotherm.df[isotherm.pressure_key].min(), isotherm.df[isotherm.pressure_key].max(), 200)
+        plt.plot(P, isotherm.loading(P))
     plt.scatter(isotherm.df[isotherm.pressure_key], isotherm.df[isotherm.loading_key])
     if xlogscale:
         plt.xscale("log")
@@ -681,122 +683,3 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False):
     plt.xlabel('Pressure')
     plt.ylabel('Loading')
     plt.show()
-
-
-class SplineFitIsotherm:
-    """
-    Piecewise cubic splines are fit to the data.
-    We use the scipy.interpolate.UnivariateSpline class
-
-    Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.
-
-    Default for extrapolating isotherm beyond highest pressure is to fail. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
-    """
-
-    def __init__(self, df, loading_key=None, pressure_key=None, fill_value=None, s=None, k=3):
-        """
-        Instantiation. InterpolatorIsotherm is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. Contructs linear interpolator from `interp1d` function in Scipy during instantiation.
-
-        e.g. to extrapolate loading beyond highest pressure point as 100.0, pass `fill_value=100.0`.
-
-        :param df: DataFrame adsorption isotherm data
-        :param loading_key: String key for loading column in df
-        :param pressure_key: String key for pressure column in df
-        :param s: Float smoothing parameter for determining the number of knots. See scipy.interpolate.UnivariateSpline
-        :param k: Int degree of spline. See scipy.interpolate.UnivariateSpline
-        :param fill_value: Float value of loading to assume when an attempt is made to interpolate at a pressure greater than the largest pressure observed in the data
-
-        :return: self
-        :rtype: InterpolatorIsotherm 
-        """
-        # if pressure = 0 not in data frame, add it for interpolation between 0 and first point.
-        if 0.0 not in df[pressure_key].values:
-            df = pd.concat([pd.DataFrame({pressure_key:0.0, loading_key:0.0}, index=[0]), df])
-
-        # store isotherm data in self
-        #: Pandas DataFrame on which isotherm was fit
-        self.df = df.sort([pressure_key], ascending=True)
-        if loading_key==None or pressure_key == None:
-            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
-        #: name of loading column
-        self.loading_key = loading_key
-        #: name of pressure column
-        self.pressure_key = pressure_key
-        
-        #: UnivariateSpline class from Scipy
-        # ext=3 says return boundary value
-        self.UnivariateSpline = UnivariateSpline(self.df[pressure_key], self.df[loading_key], k=k, s=s, ext=3)
-        
-        self.fill_value = fill_value
-
-    def loading(self, P):
-        """
-        Interpolate isotherm to compute loading at pressure P.
-
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: loading at pressure P (in corresponding units as df in instantiation)
-        :rtype: Float or Array
-        """
-        return self.UnivariateSpline(P)
-
-    def spreading_pressure(self, P):
-        """
-        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
-
-        Use trapezoid rule on isotherm data points to compute the reduced spreading pressure via the integral:
-
-        .. math::
-
-            \\Pi(p) = \\int_0^p \\frac{q(\\hat{p})}{ \\hat{p}} d\\hat{p}
-
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: spreading pressure, :math:`\\Pi`
-        :rtype: Float
-        """
-        # throw exception if interpolating outside the range.
-        if (self.fill_value == None) & (P > self.df[self.pressure_key].max()):
-            raise Exception("""To compute the spreading pressure at this bulk gas pressure,
-            we would need to extrapolate the isotherm since this pressure is outside
-            the range of the highest pressure in your pure-component isotherm data, %f.
-           
-            At present, your InterpolatorIsotherm object is set to throw an exception
-            when this occurs, as we do not have data outside this pressure range to
-            characterize the isotherm.
-           
-            Option 1: fit an analytical model to extrapolate the isotherm
-            Option 2: pass a fill_value to the construction of the InterpolatorIsotherm object.
-             Then, InterpolatorIsotherm will assume that the uptake beyond pressure %f is equal
-             to fill_value. This is reasonable if your isotherm data exhibits a plateu.
-            Option 3: Go back to the lab or computer to collect isotherm data at higher pressures.
-             (Extrapolation can be dangerous!)""" 
-           %  (self.df[self.pressure_key].max(), self.df[self.pressure_key].max()))
-
-        # Get all data points that are at nonzero pressures
-        pressures = self.df[self.pressure_key].values[self.df[self.pressure_key].values != 0.0]
-        loadings = self.df[self.loading_key].values[self.df[self.pressure_key].values != 0.0]
-        
-        # approximate loading up to first pressure point with Henry's law
-        # loading = KH * P
-        # KH is the initial slope in the adsorption isotherm
-        KH = loadings[0] / pressures[0]
-       
-        # get how many of the points are less than pressure P
-        n_points = np.sum(pressures < P)
-
-        if n_points == 0:
-            # if this pressure is between 0 and first pressure point...
-            return KH * P  # \int_0^P KH P /P dP = KH * P ...
-        else:
-            # P > first pressure point
-            area = loadings[0]  # area of first segment \int_0^P_1 n(P)/P dP
-            
-            # get area between P_1 and P_k, where P_k < P < P_{k+1} 
-            for i in range(n_points - 1):
-                dP = pressures[i+1] - pressures[i]
-                area += (self.loading(pressures[i+1]) / pressures[i+1] + self.loading(pressures[i]) / pressures[i]) / 2.0 * dP
-            
-            # finally, area of last segment
-            dP = P - pressures[n_points-1]
-            area += (self.loading(P) / P + self.loading(pressures[n_points-1]) / pressures[n_points-1]) / 2.0 * dP
-            
-            return area
