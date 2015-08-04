@@ -4,8 +4,7 @@
 ###
 __author__ = 'Cory M. Simon'
 __all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "BETIsotherm",
-           "SipsIsotherm", "InterpolatorIsotherm", "plot_isotherm",
-           "SplineFitIsotherm"]
+           "SipsIsotherm", "InterpolatorIsotherm", "plot_isotherm"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
