@@ -6,7 +6,7 @@
 Documentation for pyIAST
 ========================
 
-This Python package, `pyIAST <https://github.com/CorySimon/IAST)>`_, takes pure-component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms using the Ideal Adsorbed Solution Theory (IAST).
+This Python package, `pyIAST <https://github.com/CorySimon/IAST>`_, takes pure-component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms using the Ideal Adsorbed Solution Theory (IAST).
 
 pyIAST has five options to characterize the pure-component adsorption isotherms from a set of simulated or experimental data points:
 
