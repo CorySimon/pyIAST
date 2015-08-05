@@ -38,7 +38,7 @@ If on Windows, run from a command prompt (Start --> Accessories):
 Use
 ===
 
-Start up Python 2.6 or 2.7. I strongly recommend using `IPython Notebook <http://ipython.org/notebook.html>`_. As an example for use, see the `/test` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
+Start up Python 2.6 or 2.7. I strongly recommend using `IPython Notebook <http://ipython.org/notebook.html>`_. As an example for use, see the `/XeKrtest` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
 
 Simulated pure-component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:
 
@@ -225,12 +225,14 @@ Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms ob
 Tests
 =====
 
-This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/test/test.ipynb>`_, and the files for reproduction of this result are in the `/test` directory.
+This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/XeKrtest/test.ipynb>`_, and the files for reproduction of this result are in the `/XeKrtest` directory.
 
 **TL;DR** The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
 
 .. image:: validation.png
    :align: center
+
+Tests are also available for a mixture of methane and ethane in `this IPython Notebook <https://github.com/CorySimon/IAST/blob/master/test/Methane%20and%20ethane%20test.ipynb>`_.
 
 ===============================
 Class documentation and details
