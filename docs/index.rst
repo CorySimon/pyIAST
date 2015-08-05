@@ -22,7 +22,7 @@ If you would like an additional model implemented, submit an issue on `Github <h
 Installation
 ============
 
-This code runs on Python 2.6 and 2.7. To install, clone the repository on `Github <https://github.com/CorySimon/pyIAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
+This code runs on Python 2.6 and 2.7. To install, clone the repository on `Github <https://github.com/CorySimon/pyIAST>`_. `cd` into the main directory `pyIAST` and run the `setup.py` script in the terminal:
 
 .. code-block:: bash
    
