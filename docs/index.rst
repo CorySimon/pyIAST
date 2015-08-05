@@ -6,7 +6,7 @@
 Documentation for pyIAST
 ========================
 
-This Python package, `pyIAST <https://github.com/CorySimon/IAST>`_, takes pure-component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms using the Ideal Adsorbed Solution Theory (IAST).
+This Python package, `pyIAST <https://github.com/CorySimon/pyIAST>`_, takes pure-component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms using the Ideal Adsorbed Solution Theory (IAST).
 
 pyIAST has five options to characterize the pure-component adsorption isotherms from a set of simulated or experimental data points:
 
@@ -16,13 +16,13 @@ pyIAST has five options to characterize the pure-component adsorption isotherms 
 4. Fit a Sips isotherm model
 5. Use linear interpolation (numerical quadrature for spreading pressures)
 
-If you would like an additional model implemented, submit an issue on `Github <https://github.com/CorySimon/IAST>`_.
+If you would like an additional model implemented, submit an issue on `Github <https://github.com/CorySimon/pyIAST>`_.
 
 ============
 Installation
 ============
 
-This code runs on Python 2.6 and 2.7. To install, clone the repository on `Github <https://github.com/CorySimon/IAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
+This code runs on Python 2.6 and 2.7. To install, clone the repository on `Github <https://github.com/CorySimon/pyIAST>`_. `cd` into the folder with the source code, `/src`, and run the `setup.py` script in the terminal:
 
 .. code-block:: bash
    
@@ -215,7 +215,7 @@ Theory
 
 Ideal Adsorbed Solution Theory was developed by Myers and Prausnitz:
 
-Myers, A. L., & Prausnitz, J. M. (1965). Thermodynamics of mixed‐gas adsorption. AIChE Journal, 11(1), 121-127.
+Myers, A. L., & Prausnitz, J. M. (1965). Thermodynamics of mixed-gas adsorption. AIChE Journal, 11(1), 121-127.
     
 In our IAST calculations, we follow the method outlined in the more accessible reference:
 
@@ -225,14 +225,14 @@ Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms ob
 Tests
 =====
 
-This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/IAST/blob/master/XeKrtest/Test.ipynb>`_, and the files for reproduction of this result are in the `/XeKrtest` directory.
+This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in `this IPython notebook <https://github.com/CorySimon/pyIAST/blob/master/XeKrtest/Test.ipynb>`_, and the files for reproduction of this result are in the `/XeKrtest` directory.
 
 **TL;DR** The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).
 
 .. image:: validation.png
    :align: center
 
-Tests are also available for a mixture of methane and ethane in `this IPython Notebook <https://github.com/CorySimon/IAST/blob/master/test/Methane%20and%20ethane%20test.ipynb>`_.
+Tests are also available for a mixture of methane and ethane in `this IPython Notebook <https://github.com/CorySimon/pyIAST/blob/master/test/Methane%20and%20ethane%20test.ipynb>`_.
 
 ===============================
 Class documentation and details
