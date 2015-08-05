@@ -112,7 +112,7 @@ def IAST(p, isotherms, verboseflag=False, warningoff=False):
 
     return q  # loadings [component 1, component 2, ...]. same units as in data
 
-def reverse_IAST(z, P_total, isotherms, verboseflag=False):
+def reverse_IAST(z, P_total, isotherms, verboseflag=False, warningoff=False):
     """
     Perform reverse IAST to predict gas phase composition at total pressure `P_total` that will yield adsorbed mole fractions `z`.
 
@@ -122,6 +122,7 @@ def reverse_IAST(z, P_total, isotherms, verboseflag=False):
     :param P_total: Float total bulk gas pressure
     :param isotherms: list of pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]
     :param verboseflag: Bool print stuff
+    :param warningoff: Bool when False, warnings will print when the IAST calculation result required extrapolation of the pure-component adsorption isotherm beyond the highest pressure in the data
 
     :return: y, q: bulk gas mole fractions that yield desired adsorbed mole fractions `z` at `P_total`, component loadings
     :rtype: Array, Array
