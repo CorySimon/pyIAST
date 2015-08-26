@@ -4,8 +4,8 @@
 ###
 __author__ = 'Cory M. Simon'
 __all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "BETIsotherm",
-           "SipsIsotherm", "InterpolatorIsotherm", "plot_isotherm",
-           "DSLFIsotherm"]
+           "SipsIsotherm", "InterpolatorIsotherm", "DSLFIsotherm",
+           "plot_isotherm", "print_selectivity"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -832,3 +832,16 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False, P=No
     plt.xlabel('Pressure')
     plt.ylabel('Loading')
     plt.show()
+
+def print_selectivity(q, p):
+    """
+    Calculate selectivity as a function of component loadings and bulk gas pressures
+
+    :param q: numpy array of component loadings
+    :param p: partial pressures of components
+    """
+    n = np.size(q)
+    for i in range(n):
+        for j in range(i, n):
+            print "Selectivity for component %d over %d = %f" % (i, j, q[i]/q[j] / (p[i]/ p[j]))
+

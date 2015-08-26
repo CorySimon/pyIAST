@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Documentation for IAST Package &mdash; IAST 0.0.0 documentation</title>
+  <title>Documentation for pyIAST &mdash; IAST 0.0.0 documentation</title>
   
 
   
@@ -63,17 +63,17 @@
           
               <!-- Local TOC -->
               <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Documentation for IAST Package</a><ul>
+<li><a class="reference internal" href="#">Documentation for pyIAST</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a></li>
 <li><a class="reference internal" href="#use">Use</a><ul>
-<li><a class="reference internal" href="#import-the-pure-component-isotherms">Import the pure component isotherms</a></li>
+<li><a class="reference internal" href="#import-the-pure-component-isotherms">Import the pure-component isotherms</a></li>
 <li><a class="reference internal" href="#construct-isotherm-objects">Construct isotherm objects</a></li>
 <li><a class="reference internal" href="#peform-iast-calculation">Peform IAST calculation</a></li>
+<li><a class="reference internal" href="#reverse-iast-calculation">Reverse IAST calculation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#theory">Theory</a></li>
 <li><a class="reference internal" href="#tests">Tests</a></li>
-<li><a class="reference internal" href="#some-notes-for-troubleshooting">Some notes for troubleshooting</a></li>
 <li><a class="reference internal" href="#module-isotherms">Class documentation and details</a></li>
 </ul>
 </li>
@@ -102,7 +102,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="#">Docs</a> &raquo;</li>
       
-    <li>Documentation for IAST Package</li>
+    <li>Documentation for pyIAST</li>
       <li class="wy-breadcrumbs-aside">
         
           <a href="_sources/index.txt" rel="nofollow"> View page source</a>
@@ -113,48 +113,56 @@
 </div>
           <div role="main" class="document">
             
-  <div class="section" id="documentation-for-iast-package">
-<h1>Documentation for IAST Package<a class="headerlink" href="#documentation-for-iast-package" title="Permalink to this headline">¶</a></h1>
-<p>This Python package takes pure component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms. Ideal Adsorbed Solution Theory (IAST) is the framework used to predict the mixture adsorption isotherm from the pure component adsorption isotherms.</p>
-<p>This code has three options to apply IAST to the pure component adsorption isotherms:</p>
+  <div class="section" id="documentation-for-pyiast">
+<h1>Documentation for pyIAST<a class="headerlink" href="#documentation-for-pyiast" title="Permalink to this headline">¶</a></h1>
+<p>This Python package, <a class="reference external" href="https://github.com/CorySimon/IAST)">pyIAST</a>, takes pure-component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms using the Ideal Adsorbed Solution Theory (IAST).</p>
+<p>pyIAST has five options to characterize the pure-component adsorption isotherms from a set of simulated or experimental data points:</p>
 <ol class="arabic simple">
 <li>Fit a Langmuir isotherm model</li>
 <li>Fit a quadratic isotherm model</li>
+<li>Fit a BET isotherm model</li>
+<li>Fit a Sips isotherm model</li>
 <li>Use linear interpolation (numerical quadrature for spreading pressures)</li>
 </ol>
+<p>If you would like an additional model implemented, submit an issue on <a class="reference external" href="https://github.com/CorySimon/IAST">Github</a>.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>Clone the repository on <a class="reference external" href="https://github.com/CorySimon/IAST">Github</a>. <cite>cd</cite> into the folder with the source code, <cite>/src</cite>, and run the setup script:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span>
+<p>This code runs on Python 2.6 and 2.7. To install, clone the repository on <a class="reference external" href="https://github.com/CorySimon/IAST">Github</a>. <cite>cd</cite> into the folder with the source code, <cite>/src</cite>, and run the <cite>setup.py</cite> script in the terminal:</p>
+<div class="highlight-bash"><div class="highlight"><pre>python setup.py install
+</pre></div>
+</div>
+<p>If on Windows, run from a command prompt (Start &#8211;&gt; Accessories):</p>
+<div class="highlight-bash"><div class="highlight"><pre>setup.py install
 </pre></div>
 </div>
 </div>
 <div class="section" id="use">
 <h2>Use<a class="headerlink" href="#use" title="Permalink to this headline">¶</a></h2>
-<p>As an example for use, see the <cite>/test</cite> directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.</p>
-<p>Simulated pure component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:</p>
+<p>Start up Python 2.6 or 2.7. I strongly recommend using <a class="reference external" href="http://ipython.org/notebook.html">IPython Notebook</a>. As an example for use, see the <cite>/test</cite> directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.</p>
+<p>Simulated pure-component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:</p>
 <ul class="simple">
 <li><cite>IRMOF-1_clean_Xe_isotherm_298K.csv</cite></li>
 <li><cite>IRMOF-1_clean_Kr_isotherm_298K.csv</cite></li>
 </ul>
-<p>We simulated binary mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and at different mixture conditions using dual-component grand-canonical Monte Carlo. This data is present in <cite>mixture_Xe_Kr_IRMOF-1_clean_298K.csv</cite>. We use IAST to reproduce this result.</p>
+<p>We simulated binary mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and 298 K at different mixture conditions using dual-component grand-canonical Monte Carlo. This data is present in <cite>mixture_Xe_Kr_IRMOF-1_clean_298K.csv</cite>. We use IAST to reproduce this result.</p>
 <p>First, import the <cite>IAST</cite> package:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">IAST</span>
 </pre></div>
 </div>
 <div class="section" id="import-the-pure-component-isotherms">
-<h3>Import the pure component isotherms<a class="headerlink" href="#import-the-pure-component-isotherms" title="Permalink to this headline">¶</a></h3>
-<p>Use the <cite>Pandas</cite> package to load the pure component adsorption isotherms as DataFrames:</p>
+<h3>Import the pure-component isotherms<a class="headerlink" href="#import-the-pure-component-isotherms" title="Permalink to this headline">¶</a></h3>
+<p>Use the <cite>Pandas</cite> package (<a class="reference external" href="http://pandas.pydata.org/">documentation for Pandas</a>), to load the pure-component adsorption isotherms as DataFrames:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
-<span class="n">df_Xe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&quot;IRMOF-1_clean_Xe_isotherm_298K.csv&quot;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">df_Kr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&quot;IRMOF-1_clean_Kr_isotherm_298K.csv&quot;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">df_Xe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&quot;IRMOF-1_Xe_isotherm_298K.csv&quot;</span><span class="p">)</span>
+<span class="n">df_Kr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&quot;IRMOF-1_Kr_isotherm_298K.csv&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The units for pressure and loading in both DataFrames must be consistent; loading of gas must be in a molar quantity for IAST to apply (e.g. mmol/g or mmol/cm3). The <cite>IAST</cite> package will then work with these units throughout.</p>
+<p>The units for pressure and loading in both DataFrames must be consistent; loading of gas must be in a molar quantity for IAST to apply (e.g. mmol/g or mmol/cm<sup>3</sup>). The <cite>IAST</cite> package will then work with these units throughout.</p>
+<p>To load data into a Pandas DataFrame that is of a different format, see the <a class="reference external" href="http://pandas.pydata.org/">documentation for Pandas</a>.</p>
 </div>
 <div class="section" id="construct-isotherm-objects">
 <h3>Construct isotherm objects<a class="headerlink" href="#construct-isotherm-objects" title="Permalink to this headline">¶</a></h3>
-<p>We separate the process of characterizing the pure component adsorption isotherms from performing IAST. Construct the models by passing the DataFrame with the pure component adsorption isotherm and the names of the columns that correspond to the loading and pressure.</p>
+<p>We separate the process of characterizing the pure-component adsorption isotherms from performing IAST calculations. Construct the models by passing the DataFrame with the pure-component adsorption isotherm and the names of the columns that correspond to the loading and pressure.</p>
 <ul class="simple">
 <li>Langmuir isotherm model</li>
 </ul>
@@ -164,6 +172,15 @@
 <span class="n">kr_isotherm</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">LangmuirIsotherm</span><span class="p">(</span><span class="n">df_Kr</span><span class="p">,</span>
                                     <span class="n">loading_key</span><span class="o">=</span><span class="s">&quot;Loading(mol/m3)&quot;</span><span class="p">,</span>
                                     <span class="n">pressure_key</span><span class="o">=</span><span class="s">&quot;Pressure(bar)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You may access the model parameters identified by least squares fitting by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span><span class="o">.</span><span class="n">M</span>  <span class="c"># saturation loading (units: mol/m3 here)</span>
+<span class="n">xe_isotherm</span><span class="o">.</span><span class="n">K</span>  <span class="c"># Langmuir constant (units : 1/bar here)</span>
+</pre></div>
+</div>
+<p>or print them automatically by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span><span class="o">.</span><span class="n">print_params</span><span class="p">()</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -177,10 +194,38 @@
                                      <span class="n">pressure_key</span><span class="o">=</span><span class="s">&quot;Pressure(bar)&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>You may see the model parameters identified by least squares fitting by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span><span class="o">.</span><span class="n">M</span>  <span class="c"># half of saturation loading (units: mol/m3 here)</span>
+<span class="n">xe_isotherm</span><span class="o">.</span><span class="n">Ka</span>  <span class="c"># isotherm constant (units : 1/bar here)</span>
+<span class="n">xe_isotherm</span><span class="o">.</span><span class="n">Kb</span>  <span class="c"># isotherm constant (units : 1/bar^2 here)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>BET isotherm model</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">BETIsotherm</span><span class="p">(</span><span class="n">df_Xe</span><span class="p">,</span>
+                                    <span class="n">loading_key</span><span class="o">=</span><span class="s">&quot;Loading(mol/m3)&quot;</span><span class="p">,</span>
+                                    <span class="n">pressure_key</span><span class="o">=</span><span class="s">&quot;Pressure(bar)&quot;</span><span class="p">)</span>
+<span class="n">kr_isotherm</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">BETIsotherm</span><span class="p">(</span><span class="n">df_Kr</span><span class="p">,</span>
+                                    <span class="n">loading_key</span><span class="o">=</span><span class="s">&quot;Loading(mol/m3)&quot;</span><span class="p">,</span>
+                                    <span class="n">pressure_key</span><span class="o">=</span><span class="s">&quot;Pressure(bar)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Sips isotherm model</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">SipsIsotherm</span><span class="p">(</span><span class="n">df_Xe</span><span class="p">,</span>
+                                    <span class="n">loading_key</span><span class="o">=</span><span class="s">&quot;Loading(mol/m3)&quot;</span><span class="p">,</span>
+                                    <span class="n">pressure_key</span><span class="o">=</span><span class="s">&quot;Pressure(bar)&quot;</span><span class="p">)</span>
+<span class="n">kr_isotherm</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">SipsIsotherm</span><span class="p">(</span><span class="n">df_Kr</span><span class="p">,</span>
+                                    <span class="n">loading_key</span><span class="o">=</span><span class="s">&quot;Loading(mol/m3)&quot;</span><span class="p">,</span>
+                                    <span class="n">pressure_key</span><span class="o">=</span><span class="s">&quot;Pressure(bar)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <ul class="simple">
 <li>Linear interpolation model</li>
 </ul>
-<p>The linear interpolation model has an additional, optional argument <cite>fill_value</cite> that tells us what loading to assume when we attempt to extrapolate beyond the data point with the highest pressure. In this example, we assume that the loading at the highest pressure point is equal to the saturation loading. By default, <cite>fill_value=None</cite> and an error is thrown when the IAST code tries to extrapolate loading beyond the highest pressure point in the pure component adsorption isotherm.</p>
+<p>The linear interpolation model has an additional, optional argument <cite>fill_value</cite> that tells us what loading to assume when we attempt to extrapolate beyond the data point with the highest pressure. In this example, we assume that the loading at the highest pressure point is equal to the saturation loading. By default, <cite>fill_value=None</cite> and an error is thrown when the IAST code tries to extrapolate loading beyond the highest pressure point in the pure-component adsorption isotherm.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">InterpolatorIsotherm</span><span class="p">(</span><span class="n">df_Xe</span><span class="p">,</span>
                                         <span class="n">loading_key</span><span class="o">=</span><span class="s">&quot;Loading(mol/m3)&quot;</span><span class="p">,</span>
                                         <span class="n">pressure_key</span><span class="o">=</span><span class="s">&quot;Pressure(bar)&quot;</span><span class="p">,</span>
@@ -200,122 +245,81 @@
 <div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span><span class="o">.</span><span class="n">loading</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>or the spreading pressure via:</p>
+<p>or the reduced spreading pressure via:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">xe_isotherm</span><span class="o">.</span><span class="n">spreading_pressure</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="peform-iast-calculation">
 <h3>Peform IAST calculation<a class="headerlink" href="#peform-iast-calculation" title="Permalink to this headline">¶</a></h3>
-<p>Given the pure component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a mixture of the said gases.</p>
-<p>As an example, given the pure component adsorption isotherm objects <cite>xe_isotherm</cite> and <cite>kr_isotherm</cite> above, we seek the loading [at the same temperature as the pure component isotherms] at a 20/80 mol % Xe/Kr mixture at a pressure of 1.0. To do this, we call:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">p</span> <span class="o">=</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">8</span><span class="p">]</span>  <span class="c"># list/array of partial pressures</span>
+<p>Given the pure-component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a <em>mixture</em> of gases.</p>
+<p>As an example, given the pure-component adsorption isotherm objects <cite>xe_isotherm</cite> and <cite>kr_isotherm</cite> above, we seek the loading [at the same temperature as the pure-component isotherms] in the presence of a 20/80 mol% Xe/Kr mixture at a pressure of 1.0 bar. To do this, we call:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># list/array of partial pressures</span>
+<span class="c"># (same units as in pure-component isotherms)</span>
+<span class="n">p</span> <span class="o">=</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">8</span><span class="p">]</span>
+<span class="c"># Perform IAST calculation. returns component loadings.</span>
 <span class="n">q</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">IAST</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="p">[</span><span class="n">xe_isotherm</span><span class="p">,</span> <span class="n">kr_isotherm</span><span class="p">],</span> <span class="n">verboseflag</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>which will return <cite>q</cite>, an array of component loadings at these mixture conditions predicted by IAST. Entry 0 will correspond to Xe; entry 1 will correspond to Kr.</p>
+</div>
+<div class="section" id="reverse-iast-calculation">
+<h3>Reverse IAST calculation<a class="headerlink" href="#reverse-iast-calculation" title="Permalink to this headline">¶</a></h3>
+<p>In reverse IAST, we specify the mole fractions of gas in the <em>adsorbed</em> phase and the total bulk gas pressure, then calculate the bulk gas composition that yields these adsorbed mole fractions. This is useful e.g. in catalysis, where one seeks to control the composition of gas adsorbed in the material.</p>
+<p>As an example,  given the pure-component adsorption isotherm objects <cite>xe_isotherm</cite> and <cite>kr_isotherm</cite> above, we seek the bulk gas composition [at the same temperature as the pure-component isotherms] that will yield a 20/80 mol% Xe/Kr mixture in the <em>adsorbed phase</em> at a total bulk gas pressure of 1.0. To do this, we call:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">P_total</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">8</span><span class="p">]</span>  <span class="c"># list/array of desired mole fractions in adsorbed phase</span>
+<span class="n">y</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="n">IAST</span><span class="o">.</span><span class="n">reverse_IAST</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">P_total</span><span class="p">,</span> <span class="p">[</span><span class="n">xe_isotherm</span><span class="p">,</span> <span class="n">kr_isotherm</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>which will return <cite>y</cite>, the required bulk gas phase mole fractions, and <cite>q</cite>, an array of component loadings at these mixture conditions predicted by IAST. Entry 0 will correspond to Xe; entry 1 will correspond to Kr.</p>
 </div>
 </div>
 <div class="section" id="theory">
 <h2>Theory<a class="headerlink" href="#theory" title="Permalink to this headline">¶</a></h2>
 <p>Ideal Adsorbed Solution Theory was developed by Myers and Prausnitz:</p>
 <p>Myers, A. L., &amp; Prausnitz, J. M. (1965). Thermodynamics of mixed‐gas adsorption. AIChE Journal, 11(1), 121-127.</p>
-<p>We follow the method outlined in the reference:</p>
+<p>In our IAST calculations, we follow the method outlined in the more accessible reference:</p>
 <p>Tarafder, A. and Mazzotti, M. A method for deriving explicit binary isotherms obeying ideal adsorbed solution theory. Chem. Eng. Technol. 2012, 35, No. 1, 102-108.</p>
 </div>
 <div class="section" id="tests">
 <h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h2>
-<p>This code was tested using pure component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in <a class="reference external" href="https://github.com/CorySimon/IAST/blob/master/test/Test.ipynb">this IPython notebook</a>, and the files are in the <cite>/test</cite> directory.</p>
-<p>TL;DR The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).</p>
+<p>This code was tested using pure-component Xe and Kr adsorption isotherms in IRMOF-1 to predict the uptake of Xe and Kr at 1 bar in a variety of Xe mole fractions. The test is displayed in <a class="reference external" href="https://github.com/CorySimon/IAST/blob/master/test/test.ipynb">this IPython notebook</a>, and the files for reproduction of this result are in the <cite>/test</cite> directory.</p>
+<p><strong>TL;DR</strong> The following plot shows the simulated Xe/Kr adsorption (points) using binary grand-canonical Monte Carlo simulations against the IAST prediction from pure-component adsorption isotherms (solid lines).</p>
 <img alt="_images/validation.png" class="align-center" src="_images/validation.png" />
-</div>
-<div class="section" id="some-notes-for-troubleshooting">
-<h2>Some notes for troubleshooting<a class="headerlink" href="#some-notes-for-troubleshooting" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-isotherms">
 <span id="class-documentation-and-details"></span><h2>Class documentation and details<a class="headerlink" href="#module-isotherms" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="isotherms.InterpolatorIsotherm">
-<em class="property">class </em><code class="descclassname">isotherms.</code><code class="descname">InterpolatorIsotherm</code><span class="sig-paren">(</span><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>fill_value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.InterpolatorIsotherm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Interpolator isotherm object</p>
-<dl class="method">
-<dt id="isotherms.InterpolatorIsotherm.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>fill_value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.InterpolatorIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instantiation</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>df</strong> &#8211; DataFrame adsorption isotherm data</li>
-<li><strong>loading_key</strong> &#8211; String key for loading column in df</li>
-<li><strong>pressure_key</strong> &#8211; String key for pressure column in df</li>
-<li><strong>fill_value</strong> &#8211; Float value to assume when interp1d goes outside bounds</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#isotherms.InterpolatorIsotherm" title="isotherms.InterpolatorIsotherm">InterpolatorIsotherm</a></p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="isotherms.InterpolatorIsotherm.loading">
-<code class="descname">loading</code><span class="sig-paren">(</span><em>P</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.InterpolatorIsotherm.loading" title="Permalink to this definition">¶</a></dt>
-<dd><p>Interpolate isotherm to compute loading at pressure P</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">loading at pressure P (in corresponding units as df in instantiation)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float or Array</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="isotherms.InterpolatorIsotherm.spreading_pressure">
-<code class="descname">spreading_pressure</code><span class="sig-paren">(</span><em>P</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.InterpolatorIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate spreading pressure at a bulk gas pressure P</p>
-<p>Use trapezoid rule on isotherm data points</p>
-<p>Spreading pressure :math`Pi = int_0^p q(hat{p})/ hat{p} dhat{p}`</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="isotherms.LangmuirIsotherm">
-<em class="property">class </em><code class="descclassname">isotherms.</code><code class="descname">LangmuirIsotherm</code><span class="sig-paren">(</span><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.LangmuirIsotherm" title="Permalink to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Langmuir isotherm object to store pure-component adsorption isotherm</p>
-<p>:math:<a href="#id1"><span class="problematic" id="id2">`</span></a>M</p>
-</div></blockquote>
-<p>rac{KP}{1+KP}`</p>
+<em class="property">class </em><tt class="descclassname">isotherms.</tt><tt class="descname">LangmuirIsotherm</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>K_guess=None</em>, <em>M_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.LangmuirIsotherm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Langmuir isotherm object to store pure-component adsorption isotherm.</p>
+<p>The Langmuir adsorption isotherm is:</p>
+<div class="math">
+\[L(P) = M\frac{KP}{1+KP},\]</div>
+<p>where <span class="math">\(L\)</span> is the gas uptake, <span class="math">\(P\)</span> is pressure (fugacity), <span class="math">\(M\)</span> is the saturation loading, and <span class="math">\(K\)</span> is the Langmuir constant.</p>
+<dl class="attribute">
+<dt id="isotherms.LangmuirIsotherm.K">
+<tt class="descname">K</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.LangmuirIsotherm.K" title="Permalink to this definition">¶</a></dt>
+<dd><p>Langmuir constant K (units: 1 / pressure)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.LangmuirIsotherm.M">
+<tt class="descname">M</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.LangmuirIsotherm.M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saturation loading (units: loading)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.LangmuirIsotherm.RMSE">
+<tt class="descname">RMSE</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.LangmuirIsotherm.RMSE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Root mean square error</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="isotherms.LangmuirIsotherm.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.LangmuirIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instantiation</p>
+<tt class="descname">__init__</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>K_guess=None</em>, <em>M_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.LangmuirIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiation. A LangmuirIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -324,23 +328,31 @@
 <li><strong>df</strong> &#8211; DataFrame adsorption isotherm data</li>
 <li><strong>loading_key</strong> &#8211; String key for loading column in df</li>
 <li><strong>pressure_key</strong> &#8211; String key for pressure column in df</li>
+<li><strong>K_guess</strong> &#8211; float guess Langmuir constant (units: 1/pressure)</li>
+<li><strong>M_guess</strong> &#8211; float guess saturation loading (units: loading)</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#isotherms.LangmuirIsotherm" title="isotherms.LangmuirIsotherm">LangmuirIsotherm</a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">LangmuirIsotherm</p>
 </td>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.LangmuirIsotherm.df">
+<tt class="descname">df</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.LangmuirIsotherm.df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pandas DataFrame on which isotherm was fit</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="isotherms.LangmuirIsotherm.loading">
-<code class="descname">loading</code><span class="sig-paren">(</span><em>P</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.LangmuirIsotherm.loading" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given stored Langmuir parameters, compute loading at pressure P</p>
+<tt class="descname">loading</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.LangmuirIsotherm.loading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given stored Langmuir parameters, compute loading at pressure P.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -355,17 +367,35 @@
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="isotherms.LangmuirIsotherm.loading_key">
+<tt class="descname">loading_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.LangmuirIsotherm.loading_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of loading column</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.LangmuirIsotherm.pressure_key">
+<tt class="descname">pressure_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.LangmuirIsotherm.pressure_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of pressure column</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.LangmuirIsotherm.print_params">
+<tt class="descname">print_params</tt><big>(</big><big>)</big><a class="headerlink" href="#isotherms.LangmuirIsotherm.print_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print identified model parameters</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="isotherms.LangmuirIsotherm.spreading_pressure">
-<code class="descname">spreading_pressure</code><span class="sig-paren">(</span><em>P</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.LangmuirIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate spreading pressure at a bulk gas pressure P</p>
+<tt class="descname">spreading_pressure</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.LangmuirIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure, <span class="math">\(\Pi\)</span></td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float</td>
 </tr>
@@ -377,16 +407,40 @@
 
 <dl class="class">
 <dt id="isotherms.QuadraticIsotherm">
-<em class="property">class </em><code class="descclassname">isotherms.</code><code class="descname">QuadraticIsotherm</code><span class="sig-paren">(</span><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.QuadraticIsotherm" title="Permalink to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Quadratic isotherm object</p>
-<p>:math:<a href="#id3"><span class="problematic" id="id4">`</span></a>M</p>
-</div></blockquote>
-<p>rac{(K_a P + 2 K_b P)P}{1+K_aP+K_bP^2}`</p>
+<em class="property">class </em><tt class="descclassname">isotherms.</tt><tt class="descname">QuadraticIsotherm</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>Ka_guess=None</em>, <em>Kb_guess=None</em>, <em>M_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.QuadraticIsotherm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic isotherm object to store pure-component isotherm.</p>
+<p>The Quadratic adsorption isotherm is:</p>
+<div class="math">
+\[L(P) = M \frac{(K_a + 2 K_b P)P}{1+K_aP+K_bP^2}\]</div>
+<p>where <span class="math">\(L\)</span> is the gas uptake, <span class="math">\(P\)</span> is pressure (fugacity), <span class="math">\(M\)</span> is half of the saturation loading, and constants <span class="math">\(K_a\)</span> and <span class="math">\(K_b\)</span> are model coefficients.</p>
+<dl class="attribute">
+<dt id="isotherms.QuadraticIsotherm.Ka">
+<tt class="descname">Ka</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.QuadraticIsotherm.Ka" title="Permalink to this definition">¶</a></dt>
+<dd><p>isotherm coefficient (units: 1 / pressure)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.QuadraticIsotherm.Kb">
+<tt class="descname">Kb</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.QuadraticIsotherm.Kb" title="Permalink to this definition">¶</a></dt>
+<dd><p>isotherm coefficient (units: 1 / pressure<sup>2</sup>)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.QuadraticIsotherm.M">
+<tt class="descname">M</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.QuadraticIsotherm.M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Half of saturation loading (units: loading)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.QuadraticIsotherm.RMSE">
+<tt class="descname">RMSE</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.QuadraticIsotherm.RMSE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Root mean square error</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="isotherms.QuadraticIsotherm.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.QuadraticIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instantiation</p>
+<tt class="descname">__init__</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>Ka_guess=None</em>, <em>Kb_guess=None</em>, <em>M_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.QuadraticIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiation. A QuadraticIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -395,23 +449,32 @@
 <li><strong>df</strong> &#8211; DataFrame adsorption isotherm data</li>
 <li><strong>loading_key</strong> &#8211; String key for loading column in df</li>
 <li><strong>pressure_key</strong> &#8211; String key for pressure column in df</li>
+<li><strong>Ka_guess</strong> &#8211; float guess for Quadratic isotherm constant (units: 1/pressure)</li>
+<li><strong>Kb_guess</strong> &#8211; float guess for Quadratic isotherm constant (units: 1/pressure^2)</li>
+<li><strong>M_guess</strong> &#8211; float guess for saturation loading (units: loading)</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#isotherms.QuadraticIsotherm" title="isotherms.QuadraticIsotherm">QuadraticIsotherm</a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">QuadraticIsotherm</p>
 </td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="isotherms.QuadraticIsotherm.df">
+<tt class="descname">df</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.QuadraticIsotherm.df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pandas DataFrame on which isotherm was fit</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="isotherms.QuadraticIsotherm.loading">
-<code class="descname">loading</code><span class="sig-paren">(</span><em>P</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.QuadraticIsotherm.loading" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given stored Quadratic isotherm parameters, compute loading at pressure P</p>
+<tt class="descname">loading</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.QuadraticIsotherm.loading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given stored Quadratic isotherm parameters, compute loading at pressure P.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -426,17 +489,371 @@
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="isotherms.QuadraticIsotherm.loading_key">
+<tt class="descname">loading_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.QuadraticIsotherm.loading_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of loading column</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.QuadraticIsotherm.pressure_key">
+<tt class="descname">pressure_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.QuadraticIsotherm.pressure_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of pressure column</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.QuadraticIsotherm.print_params">
+<tt class="descname">print_params</tt><big>(</big><big>)</big><a class="headerlink" href="#isotherms.QuadraticIsotherm.print_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print identified model parameters</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="isotherms.QuadraticIsotherm.spreading_pressure">
-<code class="descname">spreading_pressure</code><span class="sig-paren">(</span><em>P</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.QuadraticIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate spreading pressure at a bulk gas pressure P</p>
+<tt class="descname">spreading_pressure</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.QuadraticIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">pi: float spreading pressure</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure, <span class="math">\(\Pi\)</span></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="isotherms.BETIsotherm">
+<em class="property">class </em><tt class="descclassname">isotherms.</tt><tt class="descname">BETIsotherm</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>Ka_guess=None</em>, <em>Kb_guess=None</em>, <em>M_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.BETIsotherm" title="Permalink to this definition">¶</a></dt>
+<dd><p>BET isotherm object to store pure-component adsorption isotherm.</p>
+<p>The BET adsorption isotherm, a multi-layer model, is:</p>
+<div class="math">
+\[L(P) = M\frac{K_A P}{(1-K_B P)(1-K_B P+ K_A P)},\]</div>
+<p>where <span class="math">\(L\)</span> is the gas uptake, <span class="math">\(P\)</span> is pressure (fugacity), <span class="math">\(M\)</span> is the number of adsorption sites on the bare surface, <span class="math">\(K_A\)</span> is the Langmuir constant for the bare surface, and <span class="math">\(K_B\)</span> is the Langmuir constant for the second and higher layers.</p>
+<dl class="attribute">
+<dt id="isotherms.BETIsotherm.Ka">
+<tt class="descname">Ka</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.BETIsotherm.Ka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Langmuir constant of first layer (units: 1 / pressure)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.BETIsotherm.Kb">
+<tt class="descname">Kb</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.BETIsotherm.Kb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Langmuir constant of second and higher layers (units: 1 / pressure)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.BETIsotherm.M">
+<tt class="descname">M</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.BETIsotherm.M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saturation loading of first layer (units: loading)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.BETIsotherm.RMSE">
+<tt class="descname">RMSE</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.BETIsotherm.RMSE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Root mean square error</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.BETIsotherm.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>Ka_guess=None</em>, <em>Kb_guess=None</em>, <em>M_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.BETIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiation. A BETIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>df</strong> &#8211; DataFrame adsorption isotherm data</li>
+<li><strong>loading_key</strong> &#8211; String key for loading column in df</li>
+<li><strong>pressure_key</strong> &#8211; String key for pressure column in df</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">BETIsotherm</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.BETIsotherm.df">
+<tt class="descname">df</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.BETIsotherm.df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pandas DataFrame on which isotherm was fit</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.BETIsotherm.loading">
+<tt class="descname">loading</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.BETIsotherm.loading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given stored Langmuir parameters, compute loading at pressure P.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; Float or Array pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">loading at pressure P (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float or Array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.BETIsotherm.loading_key">
+<tt class="descname">loading_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.BETIsotherm.loading_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of loading column</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.BETIsotherm.pressure_key">
+<tt class="descname">pressure_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.BETIsotherm.pressure_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of pressure column</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.BETIsotherm.print_params">
+<tt class="descname">print_params</tt><big>(</big><big>)</big><a class="headerlink" href="#isotherms.BETIsotherm.print_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print identified model parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.BETIsotherm.spreading_pressure">
+<tt class="descname">spreading_pressure</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.BETIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure, <span class="math">\(\Pi\)</span></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="isotherms.SipsIsotherm">
+<em class="property">class </em><tt class="descclassname">isotherms.</tt><tt class="descname">SipsIsotherm</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>K_guess=None</em>, <em>M_guess=None</em>, <em>n_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.SipsIsotherm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sips isotherm object to store pure-component adsorption isotherm.</p>
+<p>The Sips adsorption isotherm is:</p>
+<div class="math">
+\[L(P) = M\frac{K^nP^n}{1+K^nP^n},\]</div>
+<p>where <span class="math">\(L\)</span> is the gas uptake, <span class="math">\(P\)</span> is pressure (fugacity), <span class="math">\(M\)</span> is the saturation loading, <span class="math">\(K\)</span> is the equilibrium constant, and <span class="math">\(n \in (0,1]\)</span> is the index of heterogeneity.</p>
+<dl class="attribute">
+<dt id="isotherms.SipsIsotherm.K">
+<tt class="descname">K</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SipsIsotherm.K" title="Permalink to this definition">¶</a></dt>
+<dd><p>Langmuir constant K (units: 1 / pressure)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SipsIsotherm.M">
+<tt class="descname">M</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SipsIsotherm.M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saturation loading (units: loading)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SipsIsotherm.RMSE">
+<tt class="descname">RMSE</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SipsIsotherm.RMSE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Root mean square error</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.SipsIsotherm.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>K_guess=None</em>, <em>M_guess=None</em>, <em>n_guess=None</em><big>)</big><a class="headerlink" href="#isotherms.SipsIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiation. A SipsIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>df</strong> &#8211; DataFrame adsorption isotherm data</li>
+<li><strong>loading_key</strong> &#8211; String key for loading column in df</li>
+<li><strong>pressure_key</strong> &#8211; String key for pressure column in df</li>
+<li><strong>K_guess</strong> &#8211; float guess Langmuir constant (units: 1/pressure)</li>
+<li><strong>M_guess</strong> &#8211; float guess saturation loading (units: loading)</li>
+<li><strong>n_guess</strong> &#8211; float guess for index of heterogeneity</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">SipsIsotherm</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SipsIsotherm.df">
+<tt class="descname">df</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SipsIsotherm.df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pandas DataFrame on which isotherm was fit</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.SipsIsotherm.loading">
+<tt class="descname">loading</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.SipsIsotherm.loading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given stored Sips parameters, compute loading at pressure P.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; Float or Array pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">loading at pressure P (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float or Array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SipsIsotherm.loading_key">
+<tt class="descname">loading_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SipsIsotherm.loading_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of loading column</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SipsIsotherm.n">
+<tt class="descname">n</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SipsIsotherm.n" title="Permalink to this definition">¶</a></dt>
+<dd><p>index of heterogeneity (unitless)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SipsIsotherm.pressure_key">
+<tt class="descname">pressure_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SipsIsotherm.pressure_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of pressure column</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.SipsIsotherm.print_params">
+<tt class="descname">print_params</tt><big>(</big><big>)</big><a class="headerlink" href="#isotherms.SipsIsotherm.print_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print identified model parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.SipsIsotherm.spreading_pressure">
+<tt class="descname">spreading_pressure</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.SipsIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure, <span class="math">\(\Pi\)</span></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="isotherms.InterpolatorIsotherm">
+<em class="property">class </em><tt class="descclassname">isotherms.</tt><tt class="descname">InterpolatorIsotherm</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>fill_value=None</em><big>)</big><a class="headerlink" href="#isotherms.InterpolatorIsotherm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolator isotherm object to store pure-component adsorption isotherm.</p>
+<p>Here, the isotherm is characterized by linear interpolation of data.</p>
+<p>Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.</p>
+<p>Default for extrapolating isotherm beyond highest pressure in available data is to throw an exception. Pass a value for <cite>fill_value</cite> in instantiation to extrapolate loading as <cite>fill_value</cite>.</p>
+<dl class="method">
+<dt id="isotherms.InterpolatorIsotherm.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>fill_value=None</em><big>)</big><a class="headerlink" href="#isotherms.InterpolatorIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiation. InterpolatorIsotherm is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. Contructs linear interpolator from <cite>interp1d</cite> function in Scipy during instantiation.</p>
+<p>e.g. to extrapolate loading beyond highest pressure point as 100.0, pass <cite>fill_value=100.0</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>df</strong> &#8211; DataFrame adsorption isotherm data</li>
+<li><strong>loading_key</strong> &#8211; String key for loading column in df</li>
+<li><strong>pressure_key</strong> &#8211; String key for pressure column in df</li>
+<li><strong>fill_value</strong> &#8211; Float value of loading to assume when an attempt is made to interpolate at a pressure greater than the largest pressure observed in the data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">InterpolatorIsotherm</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.InterpolatorIsotherm.df">
+<tt class="descname">df</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.InterpolatorIsotherm.df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pandas DataFrame on which isotherm was fit</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.InterpolatorIsotherm.loading">
+<tt class="descname">loading</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.InterpolatorIsotherm.loading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolate isotherm to compute loading at pressure P.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">loading at pressure P (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float or Array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.InterpolatorIsotherm.loading_key">
+<tt class="descname">loading_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.InterpolatorIsotherm.loading_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of loading column</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.InterpolatorIsotherm.pressure_key">
+<tt class="descname">pressure_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.InterpolatorIsotherm.pressure_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of pressure column</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.InterpolatorIsotherm.spreading_pressure">
+<tt class="descname">spreading_pressure</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.InterpolatorIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)</p>
+<p>Use trapezoid rule on isotherm data points to compute the reduced spreading pressure via the integral:</p>
+<div class="math">
+\[\Pi(p) = \int_0^p \frac{q(\hat{p})}{ \hat{p}} d\hat{p}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure, <span class="math">\(\Pi\)</span></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float</td>
 </tr>
 </tbody>
 </table>
@@ -446,8 +863,129 @@
 
 <dl class="function">
 <dt id="isotherms.plot_isotherm">
-<code class="descclassname">isotherms.</code><code class="descname">plot_isotherm</code><span class="sig-paren">(</span><em>isotherm</em>, <em>withfit=True</em>, <em>xlogscale=False</em>, <em>ylogscale=False</em><span class="sig-paren">)</span><a class="headerlink" href="#isotherms.plot_isotherm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot isotherm data and fit</p>
+<tt class="descclassname">isotherms.</tt><tt class="descname">plot_isotherm</tt><big>(</big><em>isotherm</em>, <em>withfit=True</em>, <em>xlogscale=False</em>, <em>ylogscale=False</em><big>)</big><a class="headerlink" href="#isotherms.plot_isotherm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot isotherm data and fit using Matplotlib.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>isotherm</strong> &#8211; LangmuirIsotherm,QuadraticIsotherm,InterpolatorIsotherm the adsorption isotherm object</li>
+<li><strong>withfit</strong> &#8211; Bool plot fit as well</li>
+<li><strong>xlogscale</strong> &#8211; Bool log-scale on x-axis</li>
+<li><strong>ylogscale</strong> &#8211; Bool log-scale on y-axis</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="isotherms.SplineFitIsotherm">
+<em class="property">class </em><tt class="descclassname">isotherms.</tt><tt class="descname">SplineFitIsotherm</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>fill_value=None</em>, <em>s=None</em>, <em>k=3</em><big>)</big><a class="headerlink" href="#isotherms.SplineFitIsotherm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Piecewise cubic splines are fit to the data.
+We use the scipy.interpolate.UnivariateSpline class</p>
+<p>Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.</p>
+<p>Default for extrapolating isotherm beyond highest pressure is to fail. Pass a value for <cite>fill_value</cite> in instantiation to extrapolate loading as <cite>fill_value</cite>.</p>
+<dl class="attribute">
+<dt id="isotherms.SplineFitIsotherm.UnivariateSpline">
+<tt class="descname">UnivariateSpline</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SplineFitIsotherm.UnivariateSpline" title="Permalink to this definition">¶</a></dt>
+<dd><p>UnivariateSpline class from Scipy</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.SplineFitIsotherm.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>df</em>, <em>loading_key=None</em>, <em>pressure_key=None</em>, <em>fill_value=None</em>, <em>s=None</em>, <em>k=3</em><big>)</big><a class="headerlink" href="#isotherms.SplineFitIsotherm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiation. InterpolatorIsotherm is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. Contructs linear interpolator from <cite>interp1d</cite> function in Scipy during instantiation.</p>
+<p>e.g. to extrapolate loading beyond highest pressure point as 100.0, pass <cite>fill_value=100.0</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>df</strong> &#8211; DataFrame adsorption isotherm data</li>
+<li><strong>loading_key</strong> &#8211; String key for loading column in df</li>
+<li><strong>pressure_key</strong> &#8211; String key for pressure column in df</li>
+<li><strong>s</strong> &#8211; Float smoothing parameter for determining the number of knots. See scipy.interpolate.UnivariateSpline</li>
+<li><strong>k</strong> &#8211; Int degree of spline. See scipy.interpolate.UnivariateSpline</li>
+<li><strong>fill_value</strong> &#8211; Float value of loading to assume when an attempt is made to interpolate at a pressure greater than the largest pressure observed in the data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">InterpolatorIsotherm</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SplineFitIsotherm.df">
+<tt class="descname">df</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SplineFitIsotherm.df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pandas DataFrame on which isotherm was fit</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.SplineFitIsotherm.loading">
+<tt class="descname">loading</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.SplineFitIsotherm.loading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolate isotherm to compute loading at pressure P.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">loading at pressure P (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float or Array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SplineFitIsotherm.loading_key">
+<tt class="descname">loading_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SplineFitIsotherm.loading_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of loading column</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="isotherms.SplineFitIsotherm.pressure_key">
+<tt class="descname">pressure_key</tt><em class="property"> = None</em><a class="headerlink" href="#isotherms.SplineFitIsotherm.pressure_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of pressure column</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="isotherms.SplineFitIsotherm.spreading_pressure">
+<tt class="descname">spreading_pressure</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#isotherms.SplineFitIsotherm.spreading_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)</p>
+<p>Use trapezoid rule on isotherm data points to compute the reduced spreading pressure via the integral:</p>
+<div class="math">
+\[\Pi(p) = \int_0^p \frac{q(\hat{p})}{ \hat{p}} d\hat{p}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>P</strong> &#8211; float pressure (in corresponding units as df in instantiation)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">spreading pressure, <span class="math">\(\Pi\)</span></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt>
+<tt class="descclassname">isotherms.</tt><tt class="descname">plot_isotherm</tt><big>(</big><em>isotherm</em>, <em>withfit=True</em>, <em>xlogscale=False</em>, <em>ylogscale=False</em><big>)</big></dt>
+<dd><p>Plot isotherm data and fit using Matplotlib.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -466,24 +1004,53 @@
 
 <span class="target" id="module-IAST"></span><dl class="function">
 <dt id="IAST.IAST">
-<code class="descclassname">IAST.</code><code class="descname">IAST</code><span class="sig-paren">(</span><em>p</em>, <em>isotherms</em>, <em>verboseflag=False</em><span class="sig-paren">)</span><a class="headerlink" href="#IAST.IAST" title="Permalink to this definition">¶</a></dt>
-<dd><p>Perform IAST to predict multi-component adsorption isotherm from pure component adsorption isotherms.</p>
+<tt class="descclassname">IAST.</tt><tt class="descname">IAST</tt><big>(</big><em>p</em>, <em>isotherms</em>, <em>verboseflag=False</em>, <em>warningoff=False</em><big>)</big><a class="headerlink" href="#IAST.IAST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform IAST calculation to predict multi-component adsorption isotherm from pure component adsorption isotherms.</p>
 <p>The material is now in equilibrium with a mixture of gases with partial pressures in the array <cite>p</cite>.</p>
+<p>Pass a list of pure-component adsorption isotherms <cite>isotherms</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>p</strong> &#8211; Array partial pressures of gas components, e.g. [.5, .5]</li>
+<li><strong>p</strong> &#8211; Array or list partial pressures of gas components, e.g. [.5, .5]</li>
+<li><strong>isotherms</strong> &#8211; list pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]</li>
+<li><strong>verboseflag</strong> &#8211; Bool print stuff</li>
+<li><strong>warningoff</strong> &#8211; Bool when False, warnings will print when the IAST calculation result required extrapolation of the pure-component adsorption isotherm beyond the highest pressure in the data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">q: predicted uptakes of each component</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="IAST.reverse_IAST">
+<tt class="descclassname">IAST.</tt><tt class="descname">reverse_IAST</tt><big>(</big><em>z</em>, <em>P_total</em>, <em>isotherms</em>, <em>verboseflag=False</em><big>)</big><a class="headerlink" href="#IAST.reverse_IAST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform reverse IAST to predict gas phase composition at total pressure <cite>P_total</cite> that will yield adsorbed mole fractions <cite>z</cite>.</p>
+<p>Pass a list of pure-component adsorption isotherms <cite>isotherms</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>z</strong> &#8211; Array desired adsorbed mole fractions, e.g. [.5, .5]</li>
+<li><strong>P_total</strong> &#8211; Float total bulk gas pressure</li>
 <li><strong>isotherms</strong> &#8211; list of pure-component adsorption isotherms. e.g. [xe_isotherm, kr_isotherm]</li>
 <li><strong>verboseflag</strong> &#8211; Bool print stuff</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">predicted uptakes of each component</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">y, q: bulk gas mole fractions that yield desired adsorbed mole fractions <cite>z</cite> at <cite>P_total</cite>, component loadings</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Array</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Array, Array</p>
 </td>
 </tr>
 </tbody>
@@ -495,9 +1062,9 @@
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
 </ul>
 </div>
 
@@ -540,7 +1107,7 @@
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
