@@ -842,6 +842,6 @@ def print_selectivity(q, p):
     """
     n = np.size(q)
     for i in range(n):
-        for j in range(i, n):
+        for j in range(i + 1, n):
             print "Selectivity for component %d over %d = %f" % (i, j, q[i]/q[j] / (p[i]/ p[j]))
 
