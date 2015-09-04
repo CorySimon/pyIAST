@@ -13,8 +13,8 @@
 
 import sys, os
 import sphinx_rtd_theme
-from mock import Mock as MagicMock  # for local make html
- # from unittest.mock import MagicMock  # for readthedocs
+ # from mock import Mock as MagicMock  # for local make html
+from unittest.mock import MagicMock  # for readthedocs
 
 class Mock(object):
     def __init__(self, *args, **kwargs):
@@ -32,7 +32,7 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['pandas', 'numpy', 'pandas', 'scipy', 'scipy.interpolate', 'scipy.optimize', 'matplotlib', 'matplotlib.pyplot', 'png', 'freetype']
+MOCK_MODULES = ['pandas', 'numpy', 'pandas', 'scipy', 'scipy.interpolate', 'scipy.optimize', 'matplotlib', 'matplotlib.pyplot']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
