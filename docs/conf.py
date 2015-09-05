@@ -12,9 +12,8 @@
 # serve to show the default.
 
 import sys, os
-import sphinx_rtd_theme
-from mock import Mock as MagicMock  # for local make html
- # from unittest.mock import MagicMock  # for readthedocs
+ # from mock import Mock as MagicMock  # for local make html
+from unittest.mock import MagicMock  # for readthedocs
 
 class Mock(MagicMock):
     @classmethod
