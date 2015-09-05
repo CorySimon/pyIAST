@@ -13,24 +13,13 @@
 
 import sys, os
 import sphinx_rtd_theme
- # from mock import Mock as MagicMock  # for local make html
-from unittest.mock import MagicMock  # for readthedocs
+from mock import Mock as MagicMock  # for local make html
+ # from unittest.mock import MagicMock  # for readthedocs
 
-class Mock(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return Mock()
-
+class Mock(MagicMock):
     @classmethod
-    def __getattr__(self, name):
-        if name in ('__file__', '__path__'):
-            return '/dev/null'
-        elif name[0] == name[0].upper():
-            return type(name, (), {})
-        else:
-            return Mock()
+    def __getattr__(cls, name):
+        return Mock()
 
 MOCK_MODULES = ['pandas', 'numpy', 'pandas', 'scipy', 'scipy.interpolate', 'scipy.optimize', 'matplotlib', 'matplotlib.pyplot']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
