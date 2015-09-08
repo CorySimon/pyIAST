@@ -12,9 +12,9 @@
 # serve to show the default.
 
 import sys, os
-from mock import Mock as MagicMock  # for local make html
+ # from mock import Mock as MagicMock  # for local make html
 import sphinx_rtd_theme
- # from unittest.mock import MagicMock  # for readthedocs
+from unittest.mock import MagicMock  # for readthedocs
 
 class Mock(object):
     def __init__(self, *args, **kwargs):
