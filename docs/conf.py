@@ -14,25 +14,12 @@
 import sys, os
  # from mock import Mock as MagicMock  # for local make html
  # import sphinx_rtd_theme # for local
+import mock
+  
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'scipy.optimize',]
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
 
-class Mock(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return Mock()
-
-    @classmethod
-    def __getattr__(self, name):
-        if name in ('__file__', '__path__'):
-            return '/dev/null'
-        elif name[0] == name[0].upper():
-            return type(name, (), {})
-        else:
-            return Mock()
-
-MOCK_MODULES = ['pandas', 'numpy', 'pandas', 'scipy', 'scipy.interpolate', 'scipy.optimize', 'matplotlib', 'matplotlib.pyplot']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
