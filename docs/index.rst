@@ -22,13 +22,15 @@ If you would like an additional model implemented, submit an issue on `Github <h
 Installation
 ============
 
-To install pyIAST, I recommend using the Python package manager `pip <https://pypi.python.org/pypi/pip?>`_:
+To install pyIAST, use the Python package manager `pip <https://pypi.python.org/pypi/pip?>`_:
 
 .. code-block:: bash
    
    sudo pip install pyIAST
 
-pyIAST runs on Python 2.6 and 2.7. If you are new to Python, I highly recommend working in the `IPython Notebook <http://ipython.org/notebook.html>`_; test scripts and tutorials for this code are in the format of IPython Notebooks. The instructions for getting started with Python for scientific computing are `here <http://ipython.org/install.html>`_.
+pyIAST runs on Python 2.6 and 2.7. 
+
+If you are new to Python, I highly recommend working in the `IPython Notebook <http://ipython.org/notebook.html>`_; test scripts and tutorials for this code are written in IPython Notebooks. The instructions for getting started with Python for scientific computing are `here <http://ipython.org/install.html>`_.
 
 As an alternative method to install pyIAST, clone the repository on `Github <https://github.com/CorySimon/pyIAST>`_. `cd` into the main directory `pyIAST` and run the `setup.py` script in the terminal:
 
@@ -46,14 +48,14 @@ If on Windows, you can run the setup file from a command prompt (Start --> Acces
 Use
 ===
 
-Start up Python 2.6 or 2.7. I strongly recommend using `IPython Notebook <http://ipython.org/notebook.html>`_. As an example for use, see the `/XeKrtest` directory. We test the IAST code with a binary mixture of Xe and Kr in IRMOF-1.
+Start up a Python 2.6 or 2.7 shell. I strongly recommend using `IPython Notebook <http://ipython.org/notebook.html>`_. For this tutorial on pyIAST, enter the `/XeKrtest` directory. We test pyIAST code with a binary mixture of Xe and Kr in IRMOF-1.
 
-Simulated pure-component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in:
+Simulated pure-component adsorption isotherms at 298 K (from single componenent grand-canonical Monte Carlo) are present in the files:
 
 - `IRMOF-1_clean_Xe_isotherm_298K.csv`
 - `IRMOF-1_clean_Kr_isotherm_298K.csv`
 
-We simulated binary mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and 298 K at different mixture conditions using dual-component grand-canonical Monte Carlo. This data is present in `mixture_Xe_Kr_IRMOF-1_clean_298K.csv`. We use IAST to reproduce this result.
+We simulated binary mixture isotherms of Xe/Kr in IRMOF-1 at 1 bar total pressure and 298 K at different mixture conditions using dual-component grand-canonical Monte Carlo. This data is present in `mixture_Xe_Kr_IRMOF-1_clean_298K.csv`. In this tutorial, we use pyIAST to reproduce this result.
 
 First, import the `IAST` package:
 
@@ -61,11 +63,11 @@ First, import the `IAST` package:
 
    import IAST
 
------------------------------------
-Import the pure-component isotherms
------------------------------------
+---------------------------------------
+Import the pure-component isotherm data
+---------------------------------------
 
-Use the `Pandas` package (`documentation for Pandas <http://pandas.pydata.org/>`_), to load the pure-component adsorption isotherms as DataFrames:
+Use the `Pandas` package (`documentation for Pandas <http://pandas.pydata.org/>`_) to load the pure-component adsorption isotherms as DataFrames:
 
 .. code-block:: python
     
@@ -77,11 +79,11 @@ The units for pressure and loading in both DataFrames must be consistent; loadin
 
 To load data into a Pandas DataFrame that is of a different format, see the `documentation for Pandas <http://pandas.pydata.org/>`_.
 
---------------------------
-Construct isotherm objects
---------------------------
+-----------------------------------------
+Construct pure-component isotherm objects
+-----------------------------------------
 
-We separate the process of characterizing the pure-component adsorption isotherms from performing IAST calculations. Construct the models by passing the DataFrame with the pure-component adsorption isotherm and the names of the columns that correspond to the loading and pressure.
+We separate the process of characterizing the pure-component adsorption isotherms from performing IAST calculations. Construct the pure-component adsorption isotherm models by passing the DataFrame with the pure-component adsorption isotherm and the names of the columns that correspond to the loading and pressure. The data fitting is done under the hood when these objects are constructed.
 
 * Langmuir isotherm model
 
@@ -187,9 +189,9 @@ or the reduced spreading pressure via:
 Peform IAST calculation
 -----------------------
 
-Given the pure-component isotherm models, we now illustrate how to use IAST to predict loading when the material is in equilibrium with a *mixture* of gases.
+Given the pure-component isotherm models, we now illustrate how to use IAST to predict gas uptake when the material is in equilibrium with a *mixture* of gases.
 
-As an example, given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure-component isotherms] in the presence of a 20/80 mol% Xe/Kr mixture at a pressure of 1.0 bar. To do this, we call:
+As an example, given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the loading [at the same temperature as the pure-component isotherms] in the presence of a 20/80 mol% Xe/Kr mixture at a pressure of 1.0 bar. The code for this is:
 
 .. code-block:: python
     
@@ -207,7 +209,7 @@ Reverse IAST calculation
 
 In reverse IAST, we specify the mole fractions of gas in the *adsorbed* phase and the total bulk gas pressure, then calculate the bulk gas composition that yields these adsorbed mole fractions. This is useful e.g. in catalysis, where one seeks to control the composition of gas adsorbed in the material.
 
-As an example,  given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the bulk gas composition [at the same temperature as the pure-component isotherms] that will yield a 20/80 mol% Xe/Kr mixture in the *adsorbed phase* at a total bulk gas pressure of 1.0. To do this, we call:
+As an example,  given the pure-component adsorption isotherm objects `xe_isotherm` and `kr_isotherm` above, we seek the bulk gas composition [at the same temperature as the pure-component isotherms] that will yield a 20/80 mol% Xe/Kr mixture in the *adsorbed phase* at a total bulk gas pressure of 1.0. The code for this is:
 
 .. code-block:: python
     
