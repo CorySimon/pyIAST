@@ -1,6 +1,6 @@
 __author__ = 'Cory M. Simon'
 
-from isotherms import LangmuirIsotherm, QuadraticIsotherm, BETIsotherm, SipsIsotherm, InterpolatorIsotherm, DSLFIsotherm, plot_isotherm, print_selectivity
+from isotherms import *
 import scipy.optimize
 import numpy as np
 
