@@ -658,7 +658,7 @@ class DSLFIsotherm:
 
     .. math::
     
-        L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2} ,
+        L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}} ,
 
     where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M_i` is the saturation loading of site :math:`i`, :math:`K_i` is the equilibrium constant of site :math:`i`, and :math:`n_i` is an index of heterogeneity for site :math:`i`.
     """
@@ -688,14 +688,17 @@ class DSLFIsotherm:
         self.pressure_key = pressure_key
         
         # Pre-allocate params as nan
-        #: Langmuir constant K (units: 1 / pressure)
+        #: Langmuir constant, site 1 (units: 1 / pressure)
         self.K1 = np.nan
+        #: Langmuir constant, site 2 (units: 1 / pressure)
         self.K2 = np.nan
-        #: Saturation loading (units: loading)
+        #: Saturation loading, site 1 (units: loading)
         self.M1 = np.nan
+        #: Saturation loading, site 2 (units: loading)
         self.M2 = np.nan
-        #: index of heterogeneity (unitless)
+        #: index of heterogeneity, site 1 (unitless)
         self.n1 = np.nan
+        #: index of heterogeneity, site 2 (unitless)
         self.n2 = np.nan
         #: Root mean square error
         self.RMSE = np.nan
