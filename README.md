@@ -8,11 +8,6 @@ This Python package takes pure component gas adsorption isotherms in a nanoporou
 
 [Documentation for pyIAST is here.](http://pyiast.readthedocs.org/en/latest/)
 
-If you found pyIAST useful for your research, please consider citing the manuscript presenting pyIAST:
+If you found pyIAST useful for your research, please consider citing our manuscript presenting pyIAST:
 
 :point_right: C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. _Submitted to Computer Physics Communications_
-
-.. |docs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
-    :alt: Documentation Status
-    :scale: 100%
-    :target: https://docs.readthedocs.org/en/latest/?badge=latest
