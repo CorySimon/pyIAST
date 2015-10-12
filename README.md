@@ -1,7 +1,5 @@
 # pyIAST: Python package for Ideal Adsorbed Solution Theory
 
-|build-status| |docs|
-
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/CorySimon/pyIAST?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 This Python package takes pure component gas adsorption isotherms in a nanoporous material and predicts mixture isotherms. Ideal Adsorbed Solution Theory (IAST) is the framework used to predict the mixture adsorption isotherm from the pure component adsorption isotherms.
