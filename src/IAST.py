@@ -105,7 +105,7 @@ def IAST(p, isotherms, verboseflag=False, warningoff=False):
         for i in range(n_components):
             if p0[i] > isotherms[i].df[isotherms[i].pressure_key].max():
                 print """WARNING:
-                  Component %d: p0 = %f > %f, the highest pressure
+                  Component %d: p^0 = %f > %f, the highest pressure
                   exhibited in the pure-component isotherm data. Thus,
                   pyIAST had to extrapolate the isotherm data to achieve
                   this IAST result.""" % (i, p0[i], isotherms[i].df[isotherms[i].pressure_key].max())
