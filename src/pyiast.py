@@ -5,7 +5,7 @@ import scipy.optimize
 import numpy as np
 
 
-def IAST(p, isotherms, verboseflag=False, warningoff=False):
+def iast(p, isotherms, verboseflag=False, warningoff=False):
     """
     Perform IAST calculation to predict multi-component adsorption isotherm from pure component adsorption isotherms.
     

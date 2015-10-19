@@ -3,9 +3,8 @@
 #   Author: CoryMSimon@gmail.com
 ###
 __author__ = 'Cory M. Simon'
-__all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "BETIsotherm",
-           "SipsIsotherm", "InterpolatorIsotherm", "DSLFIsotherm",
-           "plot_isotherm", "print_selectivity"]
+__all__ = ["ModelIsotherm", "InterpolatorIsotherm",
+           "plot_isotherm", "_models", "_model_params"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -15,7 +14,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # list of models implemented in pyIAST
-_models = ["Langmuir", "Quadratic"]
+_models = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF"]
 # dictionary of parameters involved in each model
 _model_params = {"Langmuir": {"M": np.nan, "K": np.nan}, 
                  "Quadratic": {"M": np.nan, "Ka": np.nan, "Kb":np.nan},
@@ -36,28 +35,27 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     :param pressure_key: String key for pressure column in df
     :param loading_key: String key for loading column in df
     """
-    if model == "Langmuir" or model == "Quadratic" or model == 'BET' or model == "Sips":
-        # guess saturation loading to 10% more than highest loading
-        M = 1.1 * df[loading_key].max()
-        # guess K using M_guess and lowest pressure point (but not zero)
-        df_nonzero = df[df[loading_key] != 0.0]
-        idx_min = df_nonzero[loading_key].argmin()
-        K = df_nonzero[loading_key].iloc[idx_min] / df_nonzero[pressure_key].iloc[idx_min] / (
-                M - df_nonzero[pressure_key].iloc[idx_min])
-        if model == "Langmuir":
-            return {"M": M, "K": K}
-        if model == "Quadratic":
-            # Quadratic = Langmuir when Kb = Ka^2. This is our default assumption.
-            # Also, M is half of the saturation loading in the Quadratic model.
-            return {"M": M / 2.0, "Ka": K, "Kb": K ** 2.0}
-        if model == "BET":
-            # BET = Langmuir when Kb = 0.0. This is our default assumption.
-            return {"M": M, "Ka": K, "Kb": K * 0.01}
-        if model == "Sips":
-            return {"M": M, "K": K, "n": 1.0}
-        if model == "DSLF":
-            return {"M1": M, "K1": K, "n1": 1.0,
-                    "M2": 0.00000001 * M, "K2": K, "n2": 1.0}
+    # guess saturation loading to 10% more than highest loading
+    M = 1.1 * df[loading_key].max()
+    # guess K using M_guess and lowest pressure point (but not zero)
+    df_nonzero = df[df[loading_key] != 0.0]
+    idx_min = df_nonzero[loading_key].argmin()
+    K = df_nonzero[loading_key].iloc[idx_min] / df_nonzero[pressure_key].iloc[idx_min] / (
+            M - df_nonzero[pressure_key].iloc[idx_min])
+    if model == "Langmuir":
+        return {"M": M, "K": K}
+    if model == "Quadratic":
+        # Quadratic = Langmuir when Kb = Ka^2. This is our default assumption.
+        # Also, M is half of the saturation loading in the Quadratic model.
+        return {"M": M / 2.0, "Ka": K, "Kb": K ** 2.0}
+    if model == "BET":
+        # BET = Langmuir when Kb = 0.0. This is our default assumption.
+        return {"M": M, "Ka": K, "Kb": K * 0.01}
+    if model == "Sips":
+        return {"M": M, "K": K, "n": 1.0}
+    if model == "DSLF":
+        return {"M1": M, "K1": K, "n1": 1.0,
+                "M2": 0.01 * M, "K2": K, "n2": 1.0}
 
 class ModelIsotherm:
     """
@@ -154,8 +152,10 @@ class ModelIsotherm:
 
         if self.model == "Quadratic":
             return self.params["M"] * (self.params["Ka"] + 2.0 * self.params["Kb"] * P) * P / (1.0 + self.params["Ka"] * P + self.params["Kb"] * P ** 2)
+
         if self.model == "BET":
             return self.params["M"] * self.params["Ka"] * P / ((1.0 - self.params["Kb"] * P) * (1.0 - self.params["Kb"] * P + self.params["Ka"] * P))
+
         if self.model == "Sips":
             return self.params["M"] * (self.params["K"] * P) ** self.params["n"] / (1.0 + (self.params["K"] * P) ** self.params["n"])
         
@@ -176,7 +176,7 @@ class ModelIsotherm:
         # parameter names
         param_names = [param for param in self.params.keys()]  # cannot rely on order in Dict
         # guess
-        x0 = np.array([self.param_guess[param] for param in param_ames])
+        x0 = np.array([self.param_guess[param] for param in param_names])
         def RSS(x):
             """
             Residual Sum of Squares between model and data in df
@@ -193,9 +193,9 @@ class ModelIsotherm:
         opt_res = scipy.optimize.minimize(RSS, x0, method='Nelder-Mead')
         if opt_res.success == False:
             print(opt_res.message)
-            raise Exception("""Minimization of RSS for Langmuir isotherm fitting failed.
+            raise Exception("""Minimization of RSS for %s isotherm fitting failed.
             Try a different starting point in the nonlinear optimization
-            by passing a dictionary of parameter guesses, param_guess, to the constructor""")
+            by passing a dictionary of parameter guesses, param_guess, to the constructor""" % self.model)
         
         # assign params
         for i in range(len(param_names)):
@@ -231,134 +231,137 @@ class ModelIsotherm:
         """
         Print identified model parameters
         """
-        print "RMSE = ", self.RMSE
+        print "%s identified model parameters:" % self.model
         for param, val in self.params.iteritems():
-            print "%s = %f" % (param, val)
- # class InterpolatorIsotherm:
- #     """
- #     Interpolator isotherm object to store pure-component adsorption isotherm.
- # 
- #     Here, the isotherm is characterized by linear interpolation of data.
- # 
- #     Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.
- # 
- #     Default for extrapolating isotherm beyond highest pressure in available data is to throw an exception. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
- #     """
- # 
- #     def __init__(self, df, loading_key=None, pressure_key=None, fill_value=None):
- #         """
- #         Instantiation. InterpolatorIsotherm is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. Contructs linear interpolator from `interp1d` function in Scipy during instantiation.
- # 
- #         e.g. to extrapolate loading beyond highest pressure point as 100.0, pass `fill_value=100.0`.
- # 
- #         :param df: DataFrame adsorption isotherm data
- #         :param loading_key: String key for loading column in df
- #         :param pressure_key: String key for pressure column in df
- #         :param fill_value: Float value of loading to assume when an attempt is made to interpolate at a pressure greater than the largest pressure observed in the data
- # 
- #         :return: self
- #         :rtype: InterpolatorIsotherm 
- #         """
- #         # if pressure = 0 not in data frame, add it for interpolation between 0 and first point.
- #         if 0.0 not in df[pressure_key].values:
- #             df = pd.concat([pd.DataFrame({pressure_key:0.0, loading_key:0.0}, index=[0]), df])
- # 
- #         # store isotherm data in self
- #         #: Pandas DataFrame on which isotherm was fit
- #         self.df = df.sort([pressure_key], ascending=True)
- #         if loading_key==None or pressure_key == None:
- #             raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
- #         #: name of loading column
- #         self.loading_key = loading_key
- #         #: name of pressure column
- #         self.pressure_key = pressure_key
- #         
- #         if fill_value == None:
- #             self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key])
- #         else:
- #             self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key],
- #                                      fill_value=fill_value, bounds_error=False)
- #         self.fill_value = fill_value
- # 
- #     def loading(self, P):
- #         """
- #         Linearly interpolate isotherm to compute loading at pressure P.
- # 
- #         :param P: float pressure (in corresponding units as df in instantiation)
- #         :return: loading at pressure P (in corresponding units as df in instantiation)
- #         :rtype: Float or Array
- #         """
- #         return self.interp1d(P)
- # 
- #     def spreading_pressure(self, P):
- #         """
- #         Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
- # 
- #         Use numerical quadrature on isotherm data points to compute the reduced spreading pressure via the integral:
- # 
- #         .. math::
- # 
- #             \\Pi(p) = \\int_0^p \\frac{q(\\hat{p})}{ \\hat{p}} d\\hat{p}.
- # 
- #         In this integral, the isotherm :math:`q(\\hat{p})` is represented by a linear interpolation of the data.
- # 
- #         :param P: float pressure (in corresponding units as df in instantiation)
- #         :return: spreading pressure, :math:`\\Pi`
- #         :rtype: Float
- #         """
- #         # throw exception if interpolating outside the range.
- #         if (self.fill_value == None) & (P > self.df[self.pressure_key].max()):
- #             raise Exception("""To compute the spreading pressure at this bulk gas pressure,
- #             we would need to extrapolate the isotherm since this pressure is outside
- #             the range of the highest pressure in your pure-component isotherm data, %f.
- #            
- #             At present, your InterpolatorIsotherm object is set to throw an exception
- #             when this occurs, as we do not have data outside this pressure range to
- #             characterize the isotherm.
- #            
- #             Option 1: fit an analytical model to extrapolate the isotherm
- #             Option 2: pass a fill_value to the construction of the InterpolatorIsotherm object.
- #              Then, InterpolatorIsotherm will assume that the uptake beyond pressure %f is equal
- #              to fill_value. This is reasonable if your isotherm data exhibits a plateu.
- #             Option 3: Go back to the lab or computer to collect isotherm data at higher pressures.
- #              (Extrapolation can be dangerous!)""" 
- #            %  (self.df[self.pressure_key].max(), self.df[self.pressure_key].max()))
- # 
- #         # Get all data points that are at nonzero pressures
- #         pressures = self.df[self.pressure_key].values[self.df[self.pressure_key].values != 0.0]
- #         loadings = self.df[self.loading_key].values[self.df[self.pressure_key].values != 0.0]
- #         
- #         # approximate loading up to first pressure point with Henry's law
- #         # loading = KH * P
- #         # KH is the initial slope in the adsorption isotherm
- #         KH = loadings[0] / pressures[0]
- #        
- #         # get how many of the points are less than pressure P
- #         n_points = np.sum(pressures < P)
- # 
- #         if n_points == 0:
- #             # if this pressure is between 0 and first pressure point...
- #             return KH * P  # \int_0^P KH P /P dP = KH * P ...
- #         else:
- #             # P > first pressure point
- #             area = loadings[0]  # area of first segment \int_0^P_1 n(P)/P dP
- #             
- #             # get area between P_1 and P_k, where P_k < P < P_{k+1} 
- #             for i in range(n_points - 1):
- #                 # linear interpolation of isotherm data
- #                 slope = (loadings[i+1] - loadings[i]) / (pressures[i+1] - pressures[i])
- #                 intercept = loadings[i] - slope * pressures[i]
- #                 # add area of this segment
- #                 area += slope * (pressures[i+1] - pressures[i]) + intercept * np.log(pressures[i+1] / pressures[i])
- #             
- #             # finally, area of last segment
- #             slope = (self.loading(P) - loadings[n_points-1]) / (P - pressures[n_points-1])
- #             intercept = loadings[n_points-1] - slope * pressures[n_points-1]
- #             area += slope * (P - pressures[n_points-1]) + intercept * np.log(P / pressures[n_points-1])
- #             
- #             return area
- # 
- # 
+            print "\t%s = %f" % (param, val)
+        print "RMSE = ", self.RMSE
+
+class InterpolatorIsotherm:
+    """
+    Interpolator isotherm object to store pure-component adsorption isotherm.
+
+    Here, the isotherm is characterized by linear interpolation of data.
+
+    Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.
+
+    Default for extrapolating isotherm beyond highest pressure in available data is to throw an exception. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
+    """
+
+    def __init__(self, df, loading_key=None, pressure_key=None, fill_value=None):
+        """
+        Instantiation. InterpolatorIsotherm is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. Contructs linear interpolator from `interp1d` function in Scipy during instantiation.
+
+        e.g. to extrapolate loading beyond highest pressure point as 100.0, pass `fill_value=100.0`.
+
+        :param df: DataFrame adsorption isotherm data
+        :param loading_key: String key for loading column in df
+        :param pressure_key: String key for pressure column in df
+        :param fill_value: Float value of loading to assume when an attempt is made to interpolate at a pressure greater than the largest pressure observed in the data
+
+        :return: self
+        :rtype: InterpolatorIsotherm 
+        """
+        # if pressure = 0 not in data frame, add it for interpolation between 0 and first point.
+        if 0.0 not in df[pressure_key].values:
+            df = pd.concat([pd.DataFrame({pressure_key:0.0, loading_key:0.0}, index=[0]), df])
+
+        # store isotherm data in self
+        #: Pandas DataFrame on which isotherm was fit
+        self.df = df.sort([pressure_key], ascending=True)
+        if loading_key==None or pressure_key == None:
+            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
+        #: name of loading column
+        self.loading_key = loading_key
+        #: name of pressure column
+        self.pressure_key = pressure_key
+        
+        if fill_value == None:
+            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key])
+        else:
+            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key],
+                                     fill_value=fill_value, bounds_error=False)
+        #: value of loading to assume beyond highest pressure in the data
+        self.fill_value = fill_value
+
+    def loading(self, P):
+        """
+        Linearly interpolate isotherm to compute loading at pressure P.
+
+        :param P: float pressure (in corresponding units as df in instantiation)
+        :return: loading at pressure P (in corresponding units as df in instantiation)
+        :rtype: Float or Array
+        """
+        return self.interp1d(P)
+
+    def spreading_pressure(self, P):
+        """
+        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
+
+        Use numerical quadrature on isotherm data points to compute the reduced spreading pressure via the integral:
+
+        .. math::
+
+            \\Pi(p) = \\int_0^p \\frac{q(\\hat{p})}{ \\hat{p}} d\\hat{p}.
+
+        In this integral, the isotherm :math:`q(\\hat{p})` is represented by a linear interpolation of the data.
+
+        :param P: float pressure (in corresponding units as df in instantiation)
+        :return: spreading pressure, :math:`\\Pi`
+        :rtype: Float
+        """
+        # throw exception if interpolating outside the range.
+        if (self.fill_value == None) & (P > self.df[self.pressure_key].max()):
+            raise Exception("""To compute the spreading pressure at this bulk gas pressure,
+            we would need to extrapolate the isotherm since this pressure is outside
+            the range of the highest pressure in your pure-component isotherm data, %f.
+           
+            At present, your InterpolatorIsotherm object is set to throw an exception
+            when this occurs, as we do not have data outside this pressure range to
+            characterize the isotherm.
+           
+            Option 1: fit an analytical model to extrapolate the isotherm
+            Option 2: pass a fill_value to the construction of the InterpolatorIsotherm object.
+             Then, InterpolatorIsotherm will assume that the uptake beyond pressure %f is equal
+             to fill_value. This is reasonable if your isotherm data exhibits a plateu.
+            Option 3: Go back to the lab or computer to collect isotherm data at higher pressures.
+             (Extrapolation can be dangerous!)""" 
+           %  (self.df[self.pressure_key].max(), self.df[self.pressure_key].max()))
+
+        # Get all data points that are at nonzero pressures
+        pressures = self.df[self.pressure_key].values[self.df[self.pressure_key].values != 0.0]
+        loadings = self.df[self.loading_key].values[self.df[self.pressure_key].values != 0.0]
+        
+        # approximate loading up to first pressure point with Henry's law
+        # loading = KH * P
+        # KH is the initial slope in the adsorption isotherm
+        KH = loadings[0] / pressures[0]
+       
+        # get how many of the points are less than pressure P
+        n_points = np.sum(pressures < P)
+
+        if n_points == 0:
+            # if this pressure is between 0 and first pressure point...
+            return KH * P  # \int_0^P KH P /P dP = KH * P ...
+        else:
+            # P > first pressure point
+            area = loadings[0]  # area of first segment \int_0^P_1 n(P)/P dP
+            
+            # get area between P_1 and P_k, where P_k < P < P_{k+1} 
+            for i in range(n_points - 1):
+                # linear interpolation of isotherm data
+                slope = (loadings[i+1] - loadings[i]) / (pressures[i+1] - pressures[i])
+                intercept = loadings[i] - slope * pressures[i]
+                # add area of this segment
+                area += slope * (pressures[i+1] - pressures[i]) + intercept * np.log(pressures[i+1] / pressures[i])
+            
+            # finally, area of last segment
+            slope = (self.loading(P) - loadings[n_points-1]) / (P - pressures[n_points-1])
+            intercept = loadings[n_points-1] - slope * pressures[n_points-1]
+            area += slope * (P - pressures[n_points-1]) + intercept * np.log(P / pressures[n_points-1])
+            
+            return area
+
+
 
 def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False, P=None):
     """
