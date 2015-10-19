@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='pyIAST',
+setup(name='pyiast',
     version='1.0',
     description='Ideal Adsorbed Solution Theory',
     url='https://github.com/CorySimon/pyIAST',
