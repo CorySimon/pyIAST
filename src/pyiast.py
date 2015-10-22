@@ -284,3 +284,19 @@ def reverse_iast(adsorbed_mole_fractions, total_pressure, isotherms,
 
     # return mole fractions in gas phase, component loadings
     return gas_mole_fractions, loadings
+
+
+def print_selectivity(component_loadings, partial_pressures):
+    """
+    Calculate selectivity as a function of component loadings and bulk gas
+    pressures
+
+    :param component_loadings: numpy array of component loadings
+    :param partial_pressures: partial pressures of components
+    """
+    n = np.size(component_loadings)
+    for i in range(n):
+        for j in range(i + 1, n):
+            print "Selectivity for component %d over %d = %f" % (i, j,
+                    component_loadings[i] / component_loadings[j] /\
+                    (partial_pressures[i] / partial_pressures[j]))
