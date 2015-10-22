@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # ! list of models implemented in pyIAST
-_MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF"]
+_MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry"]
 
 # ! dictionary of parameters involved in each model
 _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
@@ -24,7 +24,8 @@ _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
                  "BET": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
                  "Sips": {"M": np.nan, "K": np.nan, "n": np.nan},
                  "DSLF": {"M1": np.nan, "K1": np.nan, "n1": np.nan,
-                          "M2": np.nan, "K2": np.nan, "n2": np.nan}
+                          "M2": np.nan, "K2": np.nan, "n2": np.nan},
+                 "Henry": {"KH": np.nan}
                  }
 
 
@@ -48,9 +49,9 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     #   pressure point (but not zero)
     df_nonzero = df[df[loading_key] != 0.0]
     idx_min = df_nonzero[loading_key].argmin()
-    langmuir_k = df_nonzero[loading_key].iloc[idx_min] /\
-        df_nonzero[pressure_key].iloc[idx_min] / (
-        saturation_loading - df_nonzero[pressure_key].iloc[idx_min])
+    langmuir_k = df_nonzero[loading_key].loc[idx_min] /\
+        df_nonzero[pressure_key].loc[idx_min] / (
+        saturation_loading - df_nonzero[pressure_key].loc[idx_min])
 
     if model == "Langmuir":
         return {"M": saturation_loading, "K": langmuir_k}
@@ -72,6 +73,9 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     if model == "DSLF":
         return {"M1": saturation_loading, "K1": langmuir_k, "n1": 1.0,
                 "M2": 0.01 * saturation_loading, "K2": langmuir_k, "n2": 1.0}
+    
+    if model == "Henry":
+        return {"KH": saturation_loading * langmuir_k}
 
 
 class ModelIsotherm:
@@ -109,6 +113,12 @@ class ModelIsotherm:
     .. math::
 
         L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}}
+
+    * Henry's law (only use if your data is linear!)
+
+    .. math::
+        
+        L(P) = K_H P
 
     """
 
@@ -211,6 +221,9 @@ class ModelIsotherm:
             return self.params["M1"] * k1p_n1 / (1.0 + k1p_n1) +\
                 self.params["M2"] * k2p_n2 / (1.0 + k2p_n2)
 
+        if self.model == "Henry":
+            return self.params["KH"] * pressure
+
     def _fit(self, optimization_method):
         """
         Fit model to data using nonlinear optimization with least squares loss
@@ -284,6 +297,9 @@ class ModelIsotherm:
             ) + self.params["M2"] / self.params["n2"] * np.log(
                 1.0 + (self.params["K2"] * pressure) ** self.params["n2"]
             )
+
+        if self.model == "Henry":
+            return self.params["KH"] * pressure
 
     def print_params(self):
         """
@@ -489,19 +505,3 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False,
     plt.xlabel('Pressure')
     plt.ylabel('Loading')
     plt.show()
-
-
-def print_selectivity(component_loadings, partial_pressures):
-    """
-    Calculate selectivity as a function of component loadings and bulk gas
-    pressures
-
-    :param component_loadings: numpy array of component loadings
-    :param partial_pressures: partial pressures of components
-    """
-    n = np.size(component_loadings)
-    for i in range(n):
-        for j in range(i + 1, n):
-            print "Selectivity for component %d over %d = %f" % (i, j,
-                    component_loadings[i] / component_loadings[j] /\
-                    (partial_pressures[i] / partial_pressures[j]))
