@@ -121,7 +121,7 @@ Note that you can mix isotherm models in an IAST calculation (e.g. use Langmuir 
 For both `ModelIsotherm` and `InterpolatorIsotherm`, construct the instance by passing the Pandas DataFrame with the pure-component adsorption isotherm data and the names of the columns that correspond to the loading and pressure. The data fitting is done under the hood when an instance of these objects is constructed. 
 
 ModelIsotherm
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 Here, in the construction of the instance of a `ModelIsotherm`, the data fitting to the analytical model is done under the hood. As an example, to construct a `ModelIsotherm` using the Langmuir adsorption model for methane (see Fig. 1), we pass the DataFrame `df_ch4` and the names (keys) of the columns that contain the loading and pressure data. In `IRMOF-1_methane_isotherm_298K.csv`, the name of the loading and pressure column is `Loading(mmol/g)` and `Pressure(bar)`, respectively.
 
@@ -184,7 +184,7 @@ A nonlinear data-fitting routine is used in pyIAST to fit the model parameters t
 You can see the naming convention for model parameters in pyIAST in the dictionary `pyiast._MODEL_PARAMS` as well as in the documentation for the `ModelIsotherm` below.
 
 InterpolatorIsotherm
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 The `InterpolatorIsotherm`, where pyIAST linearly interpolates the isotherm data, is constructed very similary to the `ModelIsotherm`, but now there is not a need to pass `model`.
 
@@ -207,7 +207,7 @@ The `InterpolatorIsotherm` has an additional, optional argument `fill_value` tha
     ch4_isotherm.loading(500.0)  # returns 66.739250428032904
 
 Should I use `ModelIsotherm` or `InterpolatorIsotherm`?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 See the discussion in our manuscript:
 
@@ -271,6 +271,49 @@ C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) P
 Tests
 =====
 
+In the `test` directory, you will find IPython Notebooks that test pyIAST in
+various ways
+
+Methane/ethane mixture test
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This IPython Notebook compares pyIAST calculations to binary component
+grand-canonical Monte Carlo simulations for a methane/ethane mixture. This
+notebook reproduces Fig. 2, which confirms that pyIAST yields component loadings
+consistent with the binary grand-canonical Monte Carlo simulations.
+
+Isotherm fitting tests
+^^^^^^^^^^^^^^^^^^^^^^
+
+This IPython Notebook generates synthetic data for each isotherm model, stores
+the data in a Pandas DataFrame, and uses pyIAST to construct a `ModelIsotherm`
+using this data; this notebook checks for consistency between the identified
+model parameters and those used to generate the synthetic data. This ensures
+that the data fitting routine in pyIAST is behaving correctly.
+
+Competitive Langmuir adsorption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In that case that the pure-component adsorption isotherm :math:`L_i(P)` for 
+species :math:`i` follows a Langmuir isotherm with saturation loading :math:`M`
+and Langmuir constant :math:`K`:
+
+.. math::
+   
+   L_i(P) = M\\frac{K_iP}{1+K_iP},
+
+equal saturation loadings among all components, it follows from IAST that the
+mixed gas adsorption isotherm follows the competitive Langmuir model:
+
+.. math::
+
+   N_i(p_i) = M \\frac{K_i p_i}{1+ \sum_i K_i p_i}.
+
+In this IPython Notebook, we generate synthetic data that follows three
+Langmuir adsorption isotherm models with the same saturation loading but
+different Langmuir constants. We then use pyIAST to predict the mixed gas
+adsorption isotherm and check that it is consistent with the competitive
+Langmuir adsorption model above.
 
 ===============================
 Class documentation and details
