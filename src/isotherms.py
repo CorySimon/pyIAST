@@ -1,7 +1,7 @@
 """
 This module contains objects to characterize the pure-component adsorption
 isotherms from experimental or simulated data. These will be fed into the
-IAST functions in pyiast.py
+IAST functions in pyiast.py.
 """
 __author__ = 'Cory M. Simon'
 __version__ = "2"
@@ -15,10 +15,10 @@ import copy
 import matplotlib.pyplot as plt
 import pandas as pd
 
-# ! list of models implemented in pyIAST
+#! list of models implemented in pyIAST
 _MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry"]
 
-# ! dictionary of parameters involved in each model
+#! dictionary of parameters involved in each model
 _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
                  "Quadratic": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
                  "BET": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
@@ -36,7 +36,10 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
 
     The philosophy behind the default starting guess is that (1) the saturation
     loading is close to the highest loading observed in the data, and (2) the
-    default is a Langmuir isotherm.
+    default assumption is a Langmuir isotherm.
+
+    Reminder: pass your own guess via `param_guess` in instantiation if these
+    default guesses do not lead to a converged set of parameters.
 
     :param model: String name of analytical model
     :param df: DataFrame adsorption isotherm data
@@ -81,6 +84,7 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
 class ModelIsotherm:
     """
     Class to characterize pure-component isotherm data with an analytical model.
+    Data fitting is done during instantiation.
 
     Models supported are as follows. Here, :math:`L` is the gas uptake,
     :math:`P` is pressure (fugacity technically).
@@ -92,6 +96,7 @@ class ModelIsotherm:
         L(P) = M\\frac{KP}{1+KP},
 
     * Quadratic isotherm model
+
     .. math::
 
         L(P) = M \\frac{(K_a + 2 K_b P)P}{1+K_aP+K_bP^2}
@@ -125,15 +130,15 @@ class ModelIsotherm:
     def __init__(self, df, loading_key=None, pressure_key=None, model=None,
                  param_guess=None, optimization_method="Nelder-Mead"):
         """
-        Instantiation. A ModelIsotherm class is instantiated by passing it the
+        Instantiation. A `ModelIsotherm` class is instantiated by passing it the
         pure-component adsorption isotherm in the form of a Pandas DataFrame.
         The least squares data fitting is done here.
 
-        :param df: DataFrame adsorption isotherm data
+        :param df: DataFrame pure-component adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
-        :param param_guess: Dict starting guess for model parameters using
-            fitting routine
+        :param param_guess: Dict starting guess for model parameters in the 
+            data fitting routine
         :param optimization_method: String method in SciPy minimization function
             to use in fitting model to data.
             See [here](http://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize).
@@ -148,7 +153,7 @@ class ModelIsotherm:
             raise Exception("Model %s not an option in pyIAST. See viable"
                             "models with pyiast._MODELS" % model)
 
-        #: Name of analytical odel to fit to data to characterize pure-component
+        #: Name of analytical model to fit to data to characterize pure-component
         #: adsorption isotherm
         self.model = model
 
@@ -158,15 +163,15 @@ class ModelIsotherm:
             raise Exception(
             "Pass loading_key and pressure_key, the names of the loading and"
             " pressure columns in the DataFrame, to the constructor.")
-        #: name of loading column
+        #: name of column in `df` that contains loading
         self.loading_key = loading_key
-        #: name of pressure column
+        #: name of column in `df` that contains pressure
         self.pressure_key = pressure_key
 
         #! root mean square error in fit
         self.rmse = np.nan
 
-        # Guess parameters as a starting point in minimizing RSS
+        #! Dictionary of parameters as a starting point for data fitting routine
         self.param_guess = get_default_guess_params(model, df, pressure_key,
                                                     loading_key)
         # Override defaults if user provides param_guess dictionary
@@ -177,6 +182,7 @@ class ModelIsotherm:
                                     " in the %s model." % (param, model))
                 self.param_guess[param] = guess_val
 
+        #! Dictionary of identified model parameters
         # initialize params as nan
         self.params = copy.deepcopy(_MODEL_PARAMS[model])
 
@@ -189,8 +195,8 @@ class ModelIsotherm:
 
         :param pressure: Float or Array pressure (in corresponding units as df
             in instantiation)
-        :return: loading at pressure P (in corresponding units as df in
-            instantiation)
+        :return: predicted loading at pressure P (in corresponding units as df
+            in instantiation) using fitted model params in `self.params`.
         :rtype: Float or Array
         """
         if self.model == "Langmuir":
@@ -268,6 +274,16 @@ class ModelIsotherm:
     def spreading_pressure(self, pressure):
         """
         Calculate reduced spreading pressure at a bulk gas pressure P.
+        
+        The reduced spreading pressure is an integral involving the isotherm
+        :math:`L(P)`:
+
+        .. math::
+
+            \\Pi(p) = \\int_0^p \\frac{L(\\hat{p})}{ \\hat{p}} d\\hat{p},
+
+        which is computed analytically, as a function of the model isotherm
+        parameters.
 
         :param pressure: float pressure (in corresponding units as df in
             instantiation)
@@ -321,15 +337,17 @@ class InterpolatorIsotherm:
     interpolation at low pressures.
 
     Default for extrapolating isotherm beyond highest pressure in available data
-    is to throw an exception. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
+    is to throw an exception. Pass a value for `fill_value` in instantiation to
+    extrapolate loading as `fill_value`.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None, fill_value=None):
         """
         Instantiation. InterpolatorIsotherm is instantiated by passing it the
-        pure-component adsorption isotherm in the form of a Pandas DataFrame.
-        Contructs linear interpolator from `interp1d` function in Scipy during
-        instantiation.
+        pure-component adsorption isotherm data in the form of a Pandas 
+        DataFrame. 
+        
+        Linear interpolation done with `interp1d` function in Scipy.
 
         e.g. to extrapolate loading beyond highest pressure point as 100.0,
         pass `fill_value=100.0`.
@@ -377,8 +395,8 @@ class InterpolatorIsotherm:
 
         :param pressure: float pressure (in corresponding units as df in
             instantiation)
-        :return: loading at pressure P (in corresponding units as df in
-            instantiation)
+        :return: predicted loading at pressure P (in corresponding units as df 
+            in instantiation)
         :rtype: Float or Array
         """
         return self.interp1d(pressure)
@@ -397,6 +415,9 @@ class InterpolatorIsotherm:
 
         In this integral, the isotherm :math:`q(\\hat{p})` is represented by a
         linear interpolation of the data.
+
+        See C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution 
+        Theory (IAST) Python Package. Computer Physics Communications.
 
         :param pressure: float pressure (in corresponding units as df in
             instantiation)

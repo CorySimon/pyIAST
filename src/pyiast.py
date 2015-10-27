@@ -16,22 +16,21 @@ def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False):
     pure component adsorption isotherms.
 
     The material is now in equilibrium with a mixture of gases with partial
-    pressures in the array `p` in units corresponding to those passed in the
-    list of isotherms.
+    pressures in the array `partial_pressures` in units corresponding to those
+    passed in the list of isotherms.
 
     Pass a list of pure-component adsorption isotherms `isotherms`.
 
     :param partial_pressures: Array or list partial pressures of gas components,
         e.g. [5.0, 10.0] (bar)
     :param isotherms: list pure-component adsorption isotherms.
-        e.g. [xe_isotherm, kr_isotherm]
-    :param verboseflag: Bool print stuff
+        e.g. [methane_isotherm, ethane_isotherm]
+    :param verboseflag: Bool print off a lot of information
     :param warningoff: Bool when False, warnings will print when the IAST
-        calculation result required extrapolation of
-        the pure-component adsorption isotherm beyond the highest pressure in
-        the data
+        calculation result required extrapolation of the pure-component 
+        adsorption isotherm beyond the highest pressure in the data
 
-    :return: q: predicted uptakes of each component
+    :return: loadings: predicted uptakes of each component
     :rtype: Array
     """
     partial_pressures = np.array(partial_pressures)
@@ -148,7 +147,8 @@ def reverse_iast(adsorbed_mole_fractions, total_pressure, isotherms,
                  verboseflag=False, warningoff=False):
     """
     Perform reverse IAST to predict gas phase composition at total pressure
-    `P_total` that will yield adsorbed mole fractions `adsorbed_mole_fractions`.
+    `total_pressure` that will yield adsorbed mole fractions 
+    `adsorbed_mole_fractions`.
 
     Pass a list of pure-component adsorption isotherms `isotherms`.
 
@@ -156,14 +156,15 @@ def reverse_iast(adsorbed_mole_fractions, total_pressure, isotherms,
         e.g. [.5, .5]
     :param total_pressure: Float total bulk gas pressure
     :param isotherms: list of pure-component adsorption isotherms.
-        e.g. [xe_isotherm, kr_isotherm]
+        e.g. [ethane_isotherm, methane_isotherm]
     :param verboseflag: Bool print stuff
     :param warningoff: Bool when False, warnings will print when the IAST
         calculation result required extrapolation of the pure-component
         adsorption isotherm beyond the highest pressure in the data
 
-    :return: y, q: bulk gas mole fractions that yield desired adsorbed mole
-        fractions `adsorbed_mole_fractions` at `P_total`, component loadings
+    :return: gas_mole_fractions, loadings: bulk gas mole fractions that yield 
+    desired adsorbed mole fractions `adsorbed_mole_fractions` at 
+    `total_pressure`, adsorbed component loadings according to reverse IAST
     :rtype: Array, Array
     """
     n_components = len(isotherms)  # number of components in the mixture
