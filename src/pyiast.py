@@ -10,7 +10,8 @@ import scipy.optimize
 import numpy as np
 
 
-def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False):
+def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False,
+         adsorbed_mole_fraction_guess=None):
     """
     Perform IAST calculation to predict multi-component adsorption isotherm from
     pure component adsorption isotherms.
@@ -29,6 +30,8 @@ def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False):
     :param warningoff: Bool when False, warnings will print when the IAST
         calculation result required extrapolation of the pure-component 
         adsorption isotherm beyond the highest pressure in the data
+    :param adsorbed_mole_fraction_guess: Array or List, starting guesses for
+        adsorbed phase mole fractions that `pyiast.iast` solves for
 
     :return: loadings: predicted uptakes of each component
     :rtype: Array
@@ -77,35 +80,46 @@ def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False):
                     isotherms[i + 1].spreading_pressure(
                     partial_pressures[i + 1] / adsorbed_mole_fractions[i + 1])
         return spreading_pressure_diff
+    
+    ###
+    #   Solve for mole fractions in adsorbed phase by equating spreading 
+    #   pressures. 
+    ####
+    if adsorbed_mole_fraction_guess is None:
+        # Default guess: pure-component loadings at these partial pressures.
+        loading_guess = [isotherms[i].loading(partial_pressures[i]) for i in \
+            range(n_components)]
+        loading_guess = np.array(loading_guess)
+        adsorbed_mole_fraction_guess = loading_guess / np.sum(loading_guess)
+    else:
+        np.testing.assert_almost_equal(1.0, np.sum(adsorbed_mole_fraction_guess),
+            decimal=4)
+        # if list, convert to numpy array
+        adsorbed_mole_fraction_guess = np.array(adsorbed_mole_fraction_guess)
 
-    # solve for mole fractions in adsorbed phase by equating spreading pressures
-    guess = partial_pressures / np.sum(partial_pressures)
-    n_tries = 0  # try with many different guesses until result found
-    while n_tries < 100:
-        adsorbed_mole_fractions = scipy.optimize.fsolve(
-            spreading_pressure_differences, guess[:-1])
+    res = scipy.optimize.root(
+            spreading_pressure_differences, adsorbed_mole_fraction_guess[:-1],
+            method='lm')
 
-        # mole fraction in adsorbed phase
-        adsorbed_mole_fractions = np.concatenate((adsorbed_mole_fractions,
-            np.array([1 - np.sum(adsorbed_mole_fractions)])))
-        n_tries += 1
-        # check if feasible soln is found
-        if ((np.sum(adsorbed_mole_fractions >= 0.0) == n_components) &
-                (np.sum(adsorbed_mole_fractions <= 1.0) == n_components)):
-            break
-        guess = np.random.uniform(size=n_components)
-        guess = guess / np.sum(guess)
+    if not res.success:
+        print(res.message)
+        raise Exception("""Root finding for adsorbed phase mole fractions failed.
+        This is likely because the default guess in pyIAST is not good enough.
+        Try a different starting guess for the adsorbed phase mole fractions by
+        passing an array adsorbed_mole_fraction_guess to this function.""")
 
-        #     z = np.concatenate((res.z, np.array([1 - np.sum(res.z)])))
+    adsorbed_mole_fractions = res.x
+
+    # concatenate mole fraction of last component
+    adsorbed_mole_fractions = np.concatenate((adsorbed_mole_fractions,
+            np.array([1.0 - np.sum(adsorbed_mole_fractions)])))
+
     if (np.sum(adsorbed_mole_fractions < 0.0) != 0) | (
             np.sum(adsorbed_mole_fractions > 1.0) != 0):
-        print "Tried %d times" % n_tries
-        for i in range(n_components):
-            print "\tadsorbed mole fraction [%d] = %f" % (i,
-                adsorbed_mole_fractions[i])
-            print "\tGuess: ", guess[i]
-        raise Exception("adsorbed mole fraction not in [0,1],"
-                        " solution infeasible...")
+        raise Exception("""Adsorbed mole fraction not in [0,1]. Try a different
+        starting guess for the adsorbed mole fractions by passing an array or 
+        list 'adsorbed_mole_fraction_guess' into this function. 
+        e.g. adsorbed_mole_fraction_guess=[0.2, 0.8]""")
 
     pressure0 = partial_pressures / adsorbed_mole_fractions
 
@@ -128,6 +142,7 @@ def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False):
             print "\tx = ", adsorbed_mole_fractions[i]
             print "\tSpreading pressure = ", isotherms[i].spreading_pressure(
                 pressure0[i])
+
     # print warning if had to extrapolate isotherm in spreading pressure
     if not warningoff:
         for i in range(n_components):
@@ -144,7 +159,8 @@ def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False):
 
 
 def reverse_iast(adsorbed_mole_fractions, total_pressure, isotherms,
-                 verboseflag=False, warningoff=False):
+                 verboseflag=False, warningoff=False,
+                 gas_mole_fraction_guess=None):
     """
     Perform reverse IAST to predict gas phase composition at total pressure
     `total_pressure` that will yield adsorbed mole fractions 
@@ -161,6 +177,8 @@ def reverse_iast(adsorbed_mole_fractions, total_pressure, isotherms,
     :param warningoff: Bool when False, warnings will print when the IAST
         calculation result required extrapolation of the pure-component
         adsorption isotherm beyond the highest pressure in the data
+    :param gas_mole_fraction_guess: Array or List, starting guesses for
+        gas phase mole fractions that `pyiast.reverse_iast` solves for
 
     :return: gas_mole_fractions, loadings: bulk gas mole fractions that yield 
     desired adsorbed mole fractions `adsorbed_mole_fractions` at 
@@ -220,32 +238,40 @@ def reverse_iast(adsorbed_mole_fractions, total_pressure, isotherms,
                     adsorbed_mole_fractions[i + 1])
         return spreading_pressure_diff
 
-    # solve for mole fractions in adsorbed phase by equating spreading pressures
-    # guess to be the same as the adsorbed phase mole fractions
-    guess = adsorbed_mole_fractions
-    n_tries = 0  # try with many different guesses until result found
-    while n_tries < 10:
-        gas_mole_fractions = scipy.optimize.fsolve(
-                spreading_pressure_differences, guess[:-1])
+    ###
+    #  Solve for mole fractions in gas phase by equating spreading pressures
+    if gas_mole_fraction_guess is None:
+        # Default guess: adsorbed mole fraction
+        gas_mole_fraction_guess = adsorbed_mole_fractions
+    else:
+        np.testing.assert_almost_equal(1.0, np.sum(gas_mole_fraction_guess),
+            decimal=4)
+        # if list, convert to numpy array
+        gas_mole_fraction_guess = np.array(gas_mole_fraction_guess)
+    
+    res = scipy.optimize.root(
+            spreading_pressure_differences, gas_mole_fraction_guess[:-1],
+            method='lm')
 
-        # mole fraction in bulk gas phase
-        gas_mole_fractions = np.concatenate((gas_mole_fractions,
-                                    np.array([1 - np.sum(gas_mole_fractions)])))
-        n_tries += 1
-        # check if feasible soln is found
-        if (np.sum(gas_mole_fractions >= 0.0) == n_components) &\
-           (np.sum(gas_mole_fractions <= 1.0) == n_components):
-            break
-        guess = np.random.uniform(size=(n_components,))
-        guess = guess / np.sum(guess)
+    if not res.success:
+        print(res.message)
+        raise Exception("""Root finding for gas phase mole fractions failed.
+        This is likely because the default guess in pyIAST is not good enough.
+        Try a different starting guess for the gas phase mole fractions by
+        passing an array or list gas_mole_fraction_guess to this function.""")
+    
+    gas_mole_fractions = res.x
 
-    if (np.sum(gas_mole_fractions < 0.0) != 0) |\
-       (np.sum(gas_mole_fractions > 1.0) != 0):
-        print "Tried %d times" % n_tries
-        for i in range(n_components):
-            print "\ty[%d] = %f\n" % (i, gas_mole_fractions[i])
-            print "\tGuess: ", guess
-        raise Exception("y not in [0,1], solution infeasible...")
+    # concatenate mole fraction of last component
+    gas_mole_fractions = np.concatenate((gas_mole_fractions,
+            np.array([1.0 - np.sum(gas_mole_fractions)])))
+
+    if (np.sum(gas_mole_fractions < 0.0) != 0) | (
+            np.sum(gas_mole_fractions > 1.0) != 0):
+        raise Exception("""Gas phase mole fraction not in [0,1]. Try a different
+        starting guess for the gas phase mole fractions by passing an array or 
+        list 'gas_mole_fraction_guess' into this function. 
+        e.g. gas_mole_fraction_guess=[0.2, 0.8]""")
 
     pressure0 = total_pressure * gas_mole_fractions / adsorbed_mole_fractions
 
