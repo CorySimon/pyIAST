@@ -16,7 +16,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 #! list of models implemented in pyIAST
-_MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry"]
+_MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry", 
+    "Freundlich"]
 
 #! dictionary of parameters involved in each model
 _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
@@ -25,7 +26,8 @@ _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
                  "Sips": {"M": np.nan, "K": np.nan, "n": np.nan},
                  "DSLF": {"M1": np.nan, "K1": np.nan, "n1": np.nan,
                           "M2": np.nan, "K2": np.nan, "n2": np.nan},
-                 "Henry": {"KH": np.nan}
+                 "Henry": {"KH": np.nan},
+                 "Freundlich": {"K": np.nan, "a": np.nan}
                  }
 
 
@@ -79,6 +81,9 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     
     if model == "Henry":
         return {"KH": saturation_loading * langmuir_k}
+    
+    if model == "Freundlich":
+        return {"K": saturation_loading * langmuir_k, "a": 1.0}
 
 
 class ModelIsotherm:
@@ -119,11 +124,23 @@ class ModelIsotherm:
 
         L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}}
 
-    * Henry's law (only use if your data is linear!)
+    * Henry's law. Only use if your data is linear, and do not necessarily
+    trust IAST results from Henry's law if the result required an extrapolation
+    of your data; Henry's law is unrealistic because the adsorption sites will
+    saturate at higher pressures.
 
     .. math::
         
         L(P) = K_H P
+    
+    * Freundlich Isotherm. Do not necessarily trust IAST results from the 
+    Freundlich isotherm if the result required an extrapolation
+    of your data; the Freundlich isotherm is unrealistic because the adsorption 
+    sites will saturate at higher pressures.
+
+    .. math::
+        
+        L(P) = K P^a
 
     """
 
@@ -229,6 +246,9 @@ class ModelIsotherm:
 
         if self.model == "Henry":
             return self.params["KH"] * pressure
+        
+        if self.model == "Freundlich":
+            return self.params["K"] * pressure ** self.params["a"]
 
     def _fit(self, optimization_method):
         """
@@ -316,6 +336,10 @@ class ModelIsotherm:
 
         if self.model == "Henry":
             return self.params["KH"] * pressure
+        
+        if self.model == "Freundlich":
+            return self.params["K"] / self.params["a"] *\
+                pressure ** self.params["a"]
 
     def print_params(self):
         """
