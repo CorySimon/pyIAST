@@ -15,7 +15,7 @@ pyIAST can handle an arbitrary number of components.
 
 Please see our article for theoretical details and consider citing our article if you used pyIAST in your research:
 
-C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Submitted to Computer Physics Communications.
+    \C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Submitted to Computer Physics Communications.
 
 ------------
 
