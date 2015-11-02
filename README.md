@@ -1,5 +1,8 @@
 # pyIAST: Python package for Ideal Adsorbed Solution Theory
-#### Version 1
+
+[![Documentation Status](https://readthedocs.org/projects/pyiast/badge/?version=latest)](http://pyiast.readthedocs.org/en/latest/?badge=latest)
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/CorySimon/pyIAST?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 pyIAST predicts mixted-gas adsorption isotherms in a nanoporous material from pure-component gas adsorption isotherms using Ideal Adsorbed Solution Theory (IAST).
 
