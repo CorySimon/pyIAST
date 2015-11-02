@@ -4,7 +4,6 @@ isotherms from experimental or simulated data. These will be fed into the
 IAST functions in pyiast.py.
 """
 __author__ = 'Cory M. Simon'
-__version__ = "2"
 __all__ = ["ModelIsotherm", "InterpolatorIsotherm",
            "plot_isotherm", "_MODELS", "_MODEL_PARAMS",
            "_VERSION",
