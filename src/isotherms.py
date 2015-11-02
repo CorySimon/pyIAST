@@ -6,7 +6,9 @@ IAST functions in pyiast.py.
 __author__ = 'Cory M. Simon'
 __version__ = "2"
 __all__ = ["ModelIsotherm", "InterpolatorIsotherm",
-           "plot_isotherm", "_MODELS", "_MODEL_PARAMS"]
+           "plot_isotherm", "_MODELS", "_MODEL_PARAMS",
+           "_VERSION",
+           "LangmuirIsotherm"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -14,6 +16,9 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import pandas as pd
+
+#! version
+_VERSION = "1.0"
 
 #! list of models implemented in pyIAST
 _MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry", 
@@ -124,19 +129,19 @@ class ModelIsotherm:
 
         L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}}
 
-    * Henry's law. Only use if your data is linear, and do not necessarily
-    trust IAST results from Henry's law if the result required an extrapolation
-    of your data; Henry's law is unrealistic because the adsorption sites will
-    saturate at higher pressures.
+    * Henry's law. Only use if your data is linear, and do not necessarily trust
+      IAST results from Henry's law if the result required an extrapolation
+      of your data; Henry's law is unrealistic because the adsorption sites
+      will saturate at higher pressures.
 
     .. math::
         
         L(P) = K_H P
     
     * Freundlich Isotherm. Do not necessarily trust IAST results from the 
-    Freundlich isotherm if the result required an extrapolation
-    of your data; the Freundlich isotherm is unrealistic because the adsorption 
-    sites will saturate at higher pressures.
+      Freundlich isotherm if the result required an extrapolation
+      of your data; the Freundlich isotherm is unrealistic because the
+      adsorption sites will saturate at higher pressures.
 
     .. math::
         
@@ -280,6 +285,7 @@ class ModelIsotherm:
                                           method=optimization_method)
         if not opt_res.success:
             print opt_res.message
+            print "\n\tDefault starting guess for parameters:", self.param_guess
             raise Exception("""Minimization of RSS for %s isotherm fitting
             failed. Try a different starting point in the nonlinear optimization
             by passing a dictionary of parameter guesses, param_guess, to the
@@ -550,3 +556,28 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False,
     plt.xlabel('Pressure')
     plt.ylabel('Loading')
     plt.show()
+
+###
+#   Tell user to switch to v1 if still using v0 classes.
+###
+depreciation_message = """Depreciated. You are using an old version of pyIAST. 
+    Run in the terminal: 
+        pip install pyiast --upgrade
+    See new class ModelIsotherm in docs, where all analytical isotherm models 
+    are now consolidated."""
+
+class LangmuirIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)
+
+class BETIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)
+
+class QuadraticIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)
+
+class SipsIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)

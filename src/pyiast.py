@@ -4,8 +4,11 @@ pure-component adsorption isotherm models from the `isotherms` module.
 """
 __author__ = 'Cory M. Simon'
 
-from isotherms import _MODELS, _MODEL_PARAMS, ModelIsotherm,\
+from isotherms import _MODELS, _MODEL_PARAMS, _VERSION, ModelIsotherm,\
     InterpolatorIsotherm, plot_isotherm
+# depreciated classes
+from isotherms import LangmuirIsotherm, QuadraticIsotherm, BETIsotherm,\
+    SipsIsotherm
 import scipy.optimize
 import numpy as np
 
