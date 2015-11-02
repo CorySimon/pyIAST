@@ -1,396 +1,359 @@
-###
-#   Isotherm models
-#   Author: CoryMSimon@gmail.com
-###
+"""
+This module contains objects to characterize the pure-component adsorption
+isotherms from experimental or simulated data. These will be fed into the
+IAST functions in pyiast.py.
+"""
 __author__ = 'Cory M. Simon'
-__all__ = ["LangmuirIsotherm", "QuadraticIsotherm", "BETIsotherm",
-           "SipsIsotherm", "InterpolatorIsotherm", "DSLFIsotherm",
-           "plot_isotherm", "print_selectivity"]
+__all__ = ["ModelIsotherm", "InterpolatorIsotherm",
+           "plot_isotherm", "_MODELS", "_MODEL_PARAMS",
+           "_VERSION",
+           "LangmuirIsotherm"]
 
 import scipy.optimize
 from scipy.interpolate import interp1d
-from scipy.interpolate import UnivariateSpline
 import numpy as np
+import copy
 import matplotlib.pyplot as plt
 import pandas as pd
 
+#! version
+_VERSION = "1.0"
 
-class LangmuirIsotherm:
+#! list of models implemented in pyIAST
+_MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry", 
+    "Freundlich"]
+
+#! dictionary of parameters involved in each model
+_MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
+                 "Quadratic": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
+                 "BET": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
+                 "Sips": {"M": np.nan, "K": np.nan, "n": np.nan},
+                 "DSLF": {"M1": np.nan, "K1": np.nan, "n1": np.nan,
+                          "M2": np.nan, "K2": np.nan, "n2": np.nan},
+                 "Henry": {"KH": np.nan},
+                 "Freundlich": {"K": np.nan, "a": np.nan}
+                 }
+
+
+def get_default_guess_params(model, df, pressure_key, loading_key):
     """
-    Langmuir isotherm object to store pure-component adsorption isotherm.
+    Get dictionary of default parameters for starting guesses in data fitting
+    routine.
 
-    The Langmuir adsorption isotherm is:
+    The philosophy behind the default starting guess is that (1) the saturation
+    loading is close to the highest loading observed in the data, and (2) the
+    default assumption is a Langmuir isotherm.
+
+    Reminder: pass your own guess via `param_guess` in instantiation if these
+    default guesses do not lead to a converged set of parameters.
+
+    :param model: String name of analytical model
+    :param df: DataFrame adsorption isotherm data
+    :param pressure_key: String key for pressure column in df
+    :param loading_key: String key for loading column in df
+    """
+    # guess saturation loading to 10% more than highest loading
+    saturation_loading = 1.1 * df[loading_key].max()
+    # guess Langmuir K using the guess for saturation loading and lowest
+    #   pressure point (but not zero)
+    df_nonzero = df[df[loading_key] != 0.0]
+    idx_min = df_nonzero[loading_key].argmin()
+    langmuir_k = df_nonzero[loading_key].loc[idx_min] /\
+        df_nonzero[pressure_key].loc[idx_min] / (
+        saturation_loading - df_nonzero[pressure_key].loc[idx_min])
+
+    if model == "Langmuir":
+        return {"M": saturation_loading, "K": langmuir_k}
+
+    if model == "Quadratic":
+        # Quadratic = Langmuir when Kb = Ka^2. This is our default assumption.
+        # Also, M is half of the saturation loading in the Quadratic model.
+        return {"M": saturation_loading / 2.0, "Ka": langmuir_k,
+                "Kb": langmuir_k ** 2.0}
+
+    if model == "BET":
+        # BET = Langmuir when Kb = 0.0. This is our default assumption.
+        return {"M": saturation_loading, "Ka": langmuir_k,
+                "Kb": langmuir_k * 0.01}
+
+    if model == "Sips":
+        return {"M": saturation_loading, "K": langmuir_k, "n": 1.0}
+
+    if model == "DSLF":
+        return {"M1": saturation_loading, "K1": langmuir_k, "n1": 1.0,
+                "M2": 0.01 * saturation_loading, "K2": langmuir_k, "n2": 1.0}
+    
+    if model == "Henry":
+        return {"KH": saturation_loading * langmuir_k}
+    
+    if model == "Freundlich":
+        return {"K": saturation_loading * langmuir_k, "a": 1.0}
+
+
+class ModelIsotherm:
+    """
+    Class to characterize pure-component isotherm data with an analytical model.
+    Data fitting is done during instantiation.
+
+    Models supported are as follows. Here, :math:`L` is the gas uptake,
+    :math:`P` is pressure (fugacity technically).
+
+    * Langmuir isotherm model
 
     .. math::
-    
+
         L(P) = M\\frac{KP}{1+KP},
 
-    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, and :math:`K` is the Langmuir constant.
-    """
-
-    def __init__(self, df, loading_key=None, pressure_key=None, K_guess=None, M_guess=None):
-        """
-        Instantiation. A LangmuirIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
-
-        :param df: DataFrame adsorption isotherm data
-        :param loading_key: String key for loading column in df
-        :param pressure_key: String key for pressure column in df
-        :param K_guess: float guess Langmuir constant (units: 1/pressure)
-        :param M_guess: float guess saturation loading (units: loading)
-
-        :return: self
-        :rtype: LangmuirIsotherm
-        """
-        # store isotherm data in self
-        #: Pandas DataFrame on which isotherm was fit
-        self.df = df
-        if loading_key==None or pressure_key == None:
-            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
-        #: name of loading column
-        self.loading_key = loading_key
-        #: name of pressure column
-        self.pressure_key = pressure_key
-
-        # default guesses as starting point in minimizing RSS
-        if M_guess == None:
-            M_guess = 1.1 * np.max(df[loading_key].values)  # guess saturation loading to be highest loading
-        if K_guess == None:
-            # guess K using M_guess and lowest pressure point
-            idx_min = np.argmin(df[loading_key].values)
-            K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-                M_guess - df[pressure_key].iloc[idx_min])
-
-        # Pre-allocate params as nan
-        #: Langmuir constant K (units: 1 / pressure)
-        self.K = np.nan
-        #: Saturation loading (units: loading)
-        self.M = np.nan
-        #: Root mean square error
-        self.RMSE = np.nan
-
-        self._fit(K_guess, M_guess)
-
-    def _fit(self, K_guess, M_guess):
-        """
-        Fit model to data using nonlinear optimization with least squares loss function.
-        Assigns params to self.
-
-        :param K_guess: float guess Langmuir constant (units: 1/pressure)
-        :param M_guess: float guess saturation loading (units: loading)
-        """
-        def RSS(params):
-            """
-            Residual Sum of Squares between Langmuir model and data in df
-            :param params: Array params = [K, M]
-            M: float saturation loading (units: loading)
-            K: float Langmuir constant (units: 1/pressure)
-            """
-            return np.sum((self.df[self.loading_key].values -
-                           params[1] * params[0] * self.df[self.pressure_key].values /
-                           (1.0 + params[0] * self.df[self.pressure_key].values)) ** 2)
-        
-        # minimize RSS
-        opt_res = scipy.optimize.minimize(RSS, [K_guess, M_guess], method='Nelder-Mead')
-        if opt_res.success == False:
-            print(opt_res.message)
-            print "M_guess = ", M_guess
-            print "K_guess = ", K_guess
-            raise Exception("""Minimization of RSS for Langmuir isotherm fitting failed.
-            Try a different starting point in the nonlinear optimization
-            by passing K_guess and M_guess to the constructor,
-            where K_guess and M_guess are guesses for Langmuir constant
-            and saturation loading""")
-        
-        # assign params
-        self.K = opt_res.x[0]
-        self.M = opt_res.x[1]
-        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
-
-    def loading(self, P):
-        """
-        Given stored Langmuir parameters, compute loading at pressure P.
-
-        :param P: Float or Array pressure (in corresponding units as df in instantiation)
-        :return: loading at pressure P (in corresponding units as df in instantiation)
-        :rtype: Float or Array
-        """
-        return self.M * self.K * P / (1.0 + self.K * P)
-
-    def spreading_pressure(self, P):
-        """
-        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
-
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: spreading pressure, :math:`\\Pi`
-        :rtype: Float
-        """
-        return self.M * np.log(1.0 + self.K * P)
-
-    def print_params(self):
-        """
-        Print identified model parameters
-        """
-        print "Langmuir K (1/pressure) = ", self.K
-        print "Saturation loading, M (loading) = ", self.M
-        print "RMSE = ", self.RMSE
-
-
-class QuadraticIsotherm:
-    """
-    Quadratic isotherm object to store pure-component isotherm.
-
-    The Quadratic adsorption isotherm is:
+    * Quadratic isotherm model
 
     .. math::
-    
+
         L(P) = M \\frac{(K_a + 2 K_b P)P}{1+K_aP+K_bP^2}
 
-    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is half of the saturation loading, and constants :math:`K_a` and :math:`K_b` are model coefficients.
-    """
-
-    def __init__(self, df, loading_key=None, pressure_key=None, Ka_guess=None, Kb_guess=None, M_guess=None):
-        """
-        Instantiation. A QuadraticIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
-
-        :param df: DataFrame adsorption isotherm data
-        :param loading_key: String key for loading column in df
-        :param pressure_key: String key for pressure column in df
-        :param Ka_guess: float guess for Quadratic isotherm constant (units: 1/pressure)
-        :param Kb_guess: float guess for Quadratic isotherm constant (units: 1/pressure^2)
-        :param M_guess: float guess for saturation loading (units: loading)
-
-        :return: self
-        :rtype: QuadraticIsotherm 
-        """
-        # store isotherm data in self
-        #: Pandas DataFrame on which isotherm was fit
-        self.df = df
-        if loading_key==None or pressure_key == None:
-            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
-        #: name of loading column
-        self.loading_key = loading_key
-        #: name of pressure column
-        self.pressure_key = pressure_key
-
-        # default guesses as starting point in minimizing RSS
-        if M_guess == None:
-            M_guess = 1.1 * np.max(df[loading_key].values) / 2.0  # guess saturation loading to be highest loading
-        # guess K using M_guess and lowest pressure point
-        if Ka_guess == None:
-            idx_min = np.argmin(df[loading_key].values)
-            Ka_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-                M_guess - df[pressure_key].iloc[idx_min])
-        if Kb_guess == None:
-            Kb_guess = 0.000000001  # guess as Langmuir adsorption isotherm at first
-
-        # pre-allocate params as nan
-        #: isotherm coefficient (units: 1 / pressure)
-        self.Ka = np.nan
-        #: isotherm coefficient (units: 1 / pressure\ :superscript:`2`)
-        self.Kb = np.nan
-        #: Half of saturation loading (units: loading)
-        self.M = np.nan
-        #: Root mean square error
-        self.RMSE = np.nan
-
-        self._fit(Ka_guess, Kb_guess, M_guess)
-        
-    
-    def _fit(self, Ka_guess, Kb_guess, M_guess):
-        """
-        Fit model to data using nonlinear optimization with least squares loss function.
-        Assigns params to self.
-
-        :param Ka_guess: float guess for Quadratic isotherm constant (units: 1/pressure)
-        :param Kb_guess: float guess for Quadratic isotherm constant (units: 1/pressure^2)
-        :param M_guess: float guess for saturation loading (units: loading)
-        """
-        def RSS(params):
-            """
-            Residual Sum of Squares between Quadratic isotherm model and data in df
-            :param params: Array params = [Ka, Kb, M]
-            """
-            return np.sum((self.df[self.loading_key].values -
-                           params[2] * (params[0] + 2.0 * params[1] * self.df[self.pressure_key].values) * self.df[
-                               self.pressure_key].values /
-                           (1.0 + params[0] * self.df[self.pressure_key].values + params[1] * self.df[self.pressure_key].values ** 2)) ** 2)
-        # minimize RSS
-        opt_res = scipy.optimize.minimize(RSS, [Ka_guess, Kb_guess, M_guess], method='Nelder-Mead')
-        if opt_res.success == False:
-            print(opt_res.message)
-            print "M_guess = ", M_guess
-            print "Ka_guess = ", Ka_guess
-            print "Kb_guess = ", Kb_guess
-            raise Exception("""Minimization of RSS for Quadratic isotherm fitting failed.
-            Try a different starting point in the nonlinear optimization:
-            by passing Ka_guess, Kb_guess, and M_guess to the constructor,
-            where Ka_guess, Kb_guess, and M_guess are guesses for Quadratic isotherm parameters.
-            """)
-        
-        # assign parameters
-        self.Ka = opt_res.x[0]
-        self.Kb = opt_res.x[1]
-        self.M = opt_res.x[2]
-        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
-
-    def loading(self, P):
-        """
-        Given stored Quadratic isotherm parameters, compute loading at pressure P.
-
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: loading at pressure P (in corresponding units as df in instantiation)
-        :rtype: Float or Array
-        """
-        return self.M * (self.Ka + 2.0 * self.Kb * P) * P / (1.0 + self.Ka * P + self.Kb * P ** 2)
-
-    def spreading_pressure(self, P):
-        """
-        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
-
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: spreading pressure, :math:`\\Pi`
-        :rtype: Float
-        """
-        return self.M * np.log(1.0 + self.Ka * P + self.Kb * P ** 2)
-    
-    def print_params(self):
-        """
-        Print identified model parameters
-        """
-        print "Ka (1/pressure) = ", self.Ka
-        print "Kb (1/pressure) = ", self.Kb
-        print "M (loading) = ", self.M
-        print "RMSE = ", self.RMSE
-
-
-class BETIsotherm:
-    """
-    BET isotherm object to store pure-component adsorption isotherm.
-
-    The BET adsorption isotherm, a multi-layer model, is:
+    * Brunauer-Emmett-Teller (BET) adsorption isotherm
 
     .. math::
-    
-        L(P) = M\\frac{K_A P}{(1-K_B P)(1-K_B P+ K_A P)},
 
-    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the number of adsorption sites on the bare surface, :math:`K_A` is the Langmuir constant for the bare surface, and :math:`K_B` is the Langmuir constant for the second and higher layers.
+        L(P) = M\\frac{K_A P}{(1-K_B P)(1-K_B P+ K_A P)}
+
+    * Sips adsorption isotherm
+
+    .. math::
+
+        L(P) = M\\frac{K^nP^n}{1+K^nP^n}
+
+    * Dual-site Langmuir-Fruendlich (DSLF) adsorption isotherm
+
+    .. math::
+
+        L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}}
+
+    * Henry's law. Only use if your data is linear, and do not necessarily trust
+      IAST results from Henry's law if the result required an extrapolation
+      of your data; Henry's law is unrealistic because the adsorption sites
+      will saturate at higher pressures.
+
+    .. math::
+        
+        L(P) = K_H P
+    
+    * Freundlich Isotherm. Do not necessarily trust IAST results from the 
+      Freundlich isotherm if the result required an extrapolation
+      of your data; the Freundlich isotherm is unrealistic because the
+      adsorption sites will saturate at higher pressures.
+
+    .. math::
+        
+        L(P) = K P^a
+
     """
 
-    def __init__(self, df, loading_key=None, pressure_key=None, Ka_guess=None, Kb_guess=None, M_guess=None):
+    def __init__(self, df, loading_key=None, pressure_key=None, model=None,
+                 param_guess=None, optimization_method="Nelder-Mead"):
         """
-        Instantiation. A BETIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
+        Instantiation. A `ModelIsotherm` class is instantiated by passing it the
+        pure-component adsorption isotherm in the form of a Pandas DataFrame.
+        The least squares data fitting is done here.
 
-        :param df: DataFrame adsorption isotherm data
+        :param df: DataFrame pure-component adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
+        :param param_guess: Dict starting guess for model parameters in the 
+            data fitting routine
+        :param optimization_method: String method in SciPy minimization function
+            to use in fitting model to data.
+            See [here](http://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize).
 
         :return: self
-        :rtype: BETIsotherm
+        :rtype: ModelIsotherm
         """
-        # store isotherm data in self
+        if model is None:
+            raise Exception("Specify a model to fit to the pure-component"
+                            " isotherm data. e.g. model=\"Langmuir\"")
+        if model not in _MODELS:
+            raise Exception("Model %s not an option in pyIAST. See viable"
+                            "models with pyiast._MODELS" % model)
+
+        #: Name of analytical model to fit to data to characterize pure-component
+        #: adsorption isotherm
+        self.model = model
+
         #: Pandas DataFrame on which isotherm was fit
         self.df = df
-        if loading_key==None or pressure_key == None:
-            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
-        #: name of loading column
+        if None in [loading_key, pressure_key]:
+            raise Exception(
+            "Pass loading_key and pressure_key, the names of the loading and"
+            " pressure columns in the DataFrame, to the constructor.")
+        #: name of column in `df` that contains loading
         self.loading_key = loading_key
-        #: name of pressure column
+        #: name of column in `df` that contains pressure
         self.pressure_key = pressure_key
 
-        # default guesses as starting point in minimizing RSS
-        if M_guess == None:
-            M_guess = 1.1 * np.max(df[loading_key].values)  # guess saturation loading to be highest loading
-        if Ka_guess == None:
-            # guess K_A using M_guess and lowest pressure point
-            idx_min = np.argmin(df[loading_key].values)
-            Ka_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-                M_guess - df[pressure_key].iloc[idx_min])
-        if Kb_guess == None:
-            Kb_guess = .001 * Ka_guess  # guess small
+        #! root mean square error in fit
+        self.rmse = np.nan
 
-        # pre-allocate params as nan
-        #: Langmuir constant of first layer (units: 1 / pressure)
-        self.Ka = np.nan
-        #: Langmuir constant of second and higher layers (units: 1 / pressure)
-        self.Kb = np.nan
-        #: Saturation loading of first layer (units: loading)
-        self.M = np.nan
-        #: Root mean square error
-        self.RMSE = np.nan
+        #! Dictionary of parameters as a starting point for data fitting routine
+        self.param_guess = get_default_guess_params(model, df, pressure_key,
+                                                    loading_key)
+        # Override defaults if user provides param_guess dictionary
+        if param_guess is not None:
+            for param, guess_val in param_guess.iteritems():
+                if param not in self.param_guess.keys():
+                    raise Exception("%s is not a valid parameter"
+                                    " in the %s model." % (param, model))
+                self.param_guess[param] = guess_val
 
-        self._fit(Ka_guess, Kb_guess, M_guess)
+        #! Dictionary of identified model parameters
+        # initialize params as nan
+        self.params = copy.deepcopy(_MODEL_PARAMS[model])
 
-    
-    def _fit(self, Ka_guess, Kb_guess, M_guess):
+        # fit model to isotherm data in self.df
+        self._fit(optimization_method)
+
+    def loading(self, pressure):
         """
-        Fit model to data using nonlinear optimization with least squares loss function.
-        Assigns params to self.
+        Given stored model parameters, compute loading at pressure P.
 
-        :param Ka_guess: float guess for Langmuir constant for first layer (units: 1/pressure)
-        :param Kb_guess: float guess for Langmuir constant for > first layer (units: 1/pressure)
-        :param M_guess: float guess for saturation loading of first layer (units: loading)
-        """
-        def RSS(params):
-            """
-            Residual Sum of Squares between Langmuir model and data in df
-            :param params: Array params = [K_A, K_B, M]
-            K_A: float Langmuir constant for first layer (units: 1/pressure)
-            K_B: float Langmuir constant for > first layer (units: 1/pressure)
-            M: float saturation loading of first layer (units: loading)
-            """
-            return np.sum((self.df[self.loading_key].values -
-                           params[2] * params[0] * self.df[self.pressure_key].values /
-                           (1.0 - params[1] * self.df[self.pressure_key].values) /
-                           (1.0 - params[1] * self.df[self.pressure_key].values + params[0] * self.df[self.pressure_key].values)) ** 2)
-        
-        # minimize RSS
-        opt_res = scipy.optimize.minimize(RSS, [Ka_guess, Kb_guess, M_guess], method='Nelder-Mead')
-        if opt_res.success == False:
-            print(opt_res.message)
-            print "M_guess = ", M_guess
-            print "Ka_guess = ", Ka_guess
-            print "Kb_guess = ", Kb_guess
-            raise Exception("""Minimization of RSS for BET isotherm fitting failed.
-            Try a different starting point in the nonlinear optimization
-            by passing Ka_guess, Kb_guess, and M_guess into the constructor.
-            where Ka_guess, Kb_guess, and M_guess are guesses for BET isotherm parameters.
-            """)
-
-        # assign params
-        self.Ka = opt_res.x[0]
-        self.Kb = opt_res.x[1]
-        self.M = opt_res.x[2]
-        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
-
-
-    def loading(self, P):
-        """
-        Given stored Langmuir parameters, compute loading at pressure P.
-
-        :param P: Float or Array pressure (in corresponding units as df in instantiation)
-        :return: loading at pressure P (in corresponding units as df in instantiation)
+        :param pressure: Float or Array pressure (in corresponding units as df
+            in instantiation)
+        :return: predicted loading at pressure P (in corresponding units as df
+            in instantiation) using fitted model params in `self.params`.
         :rtype: Float or Array
         """
-        return self.M * self.Ka * P / ( (1.0 - self.Kb * P) * (1.0 - self.Kb * P + self.Ka * P) )
+        if self.model == "Langmuir":
+            return self.params["M"] * self.params["K"] * pressure /\
+                (1.0 + self.params["K"] * pressure)
 
-    def spreading_pressure(self, P):
+        if self.model == "Quadratic":
+            return self.params["M"] * (self.params["Ka"] +\
+                2.0 * self.params["Kb"] * pressure) * pressure / (
+                1.0 + self.params["Ka"] * pressure +
+                self.params["Kb"] * pressure ** 2)
+
+        if self.model == "BET":
+            return self.params["M"] * self.params["Ka"] * pressure / (
+                (1.0 - self.params["Kb"] * pressure) *
+                (1.0 - self.params["Kb"] * pressure +
+                self.params["Ka"] * pressure))
+
+        if self.model == "Sips":
+            return self.params["M"] * (self.params["K"] * pressure) **\
+                self.params["n"] / (
+                1.0 + (self.params["K"] * pressure) ** self.params["n"])
+
+        if self.model == "DSLF":
+            # (K_i P) ^ n_i
+            k1p_n1 = (self.params["K1"] * pressure) ** self.params["n1"]
+            k2p_n2 = (self.params["K2"] * pressure) ** self.params["n2"]
+            return self.params["M1"] * k1p_n1 / (1.0 + k1p_n1) +\
+                self.params["M2"] * k2p_n2 / (1.0 + k2p_n2)
+
+        if self.model == "Henry":
+            return self.params["KH"] * pressure
+        
+        if self.model == "Freundlich":
+            return self.params["K"] * pressure ** self.params["a"]
+
+    def _fit(self, optimization_method):
         """
-        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
+        Fit model to data using nonlinear optimization with least squares loss
+            function. Assigns params to self.
 
-        :param P: float pressure (in corresponding units as df in instantiation)
+        :param K_guess: float guess Langmuir constant (units: 1/pressure)
+        :param M_guess: float guess saturation loading (units: loading)
+        """
+        # parameter names (cannot rely on order in Dict)
+        param_names = [param for param in self.params.keys()]
+        # guess
+        guess = np.array([self.param_guess[param] for param in param_names])
+
+        def residual_sum_of_squares(params_):
+            """
+            Residual Sum of Squares between model and data in df
+            :param params_: Array of parameters
+            """
+            # change params to those in x
+            for i in range(len(param_names)):
+                self.params[param_names[i]] = params_[i]
+
+            return np.sum((self.df[self.loading_key].values -
+                           self.loading(self.df[self.pressure_key].values))** 2)
+
+        # minimize RSS
+        opt_res = scipy.optimize.minimize(residual_sum_of_squares, guess,
+                                          method=optimization_method)
+        if not opt_res.success:
+            print opt_res.message
+            print "\n\tDefault starting guess for parameters:", self.param_guess
+            raise Exception("""Minimization of RSS for %s isotherm fitting
+            failed. Try a different starting point in the nonlinear optimization
+            by passing a dictionary of parameter guesses, param_guess, to the
+            constructor""" % self.model)
+
+        # assign params
+        for j in range(len(param_names)):
+            self.params[param_names[j]] = opt_res.x[j]
+
+        self.rmse = np.sqrt(opt_res.fun / self.df.shape[0])
+
+    def spreading_pressure(self, pressure):
+        """
+        Calculate reduced spreading pressure at a bulk gas pressure P.
+        
+        The reduced spreading pressure is an integral involving the isotherm
+        :math:`L(P)`:
+
+        .. math::
+
+            \\Pi(p) = \\int_0^p \\frac{L(\\hat{p})}{ \\hat{p}} d\\hat{p},
+
+        which is computed analytically, as a function of the model isotherm
+        parameters.
+
+        :param pressure: float pressure (in corresponding units as df in
+            instantiation)
         :return: spreading pressure, :math:`\\Pi`
         :rtype: Float
         """
-        return self.M * np.log((1.0 - self.Kb * P + self.Ka * P) / (1.0 - self.Kb * P))
-    
+        if self.model == "Langmuir":
+            return self.params["M"] * np.log(1.0 + self.params["K"] * pressure)
+
+        if self.model == "Quadratic":
+            return self.params["M"] * np.log(1.0 + self.params["Ka"] * pressure +
+                self.params["Kb"] * pressure ** 2)
+
+        if self.model == "BET":
+            return self.params["M"] * np.log(
+                (1.0 - self.params["Kb"] * pressure +
+                self.params["Ka"] * pressure) /
+                (1.0 - self.params["Kb"] * pressure))
+
+        if self.model == "Sips":
+            return self.params["M"] / self.params["n"] * np.log(1.0 +
+                (self.params["K"] * pressure) ** self.params["n"])
+
+        if self.model == "DSLF":
+            return self.params["M1"] / self.params["n1"] * np.log(
+                1.0 + (self.params["K1"] * pressure) ** self.params["n1"]
+            ) + self.params["M2"] / self.params["n2"] * np.log(
+                1.0 + (self.params["K2"] * pressure) ** self.params["n2"]
+            )
+
+        if self.model == "Henry":
+            return self.params["KH"] * pressure
+        
+        if self.model == "Freundlich":
+            return self.params["K"] / self.params["a"] *\
+                pressure ** self.params["a"]
+
     def print_params(self):
         """
         Print identified model parameters
         """
-        print "Ka (1/pressure) = ", self.Ka
-        print "Kb (1/pressure) = ", self.Kb
-        print "M (loading) = ", self.M
-        print "RMSE = ", self.RMSE
+        print "%s identified model parameters:" % self.model
+        for param, val in self.params.iteritems():
+            print "\t%s = %f" % (param, val)
+        print "RMSE = ", self.rmse
 
 
 class InterpolatorIsotherm:
@@ -399,433 +362,190 @@ class InterpolatorIsotherm:
 
     Here, the isotherm is characterized by linear interpolation of data.
 
-    Loading = 0.0 at pressure = 0.0 is enforced here automatically for interpolation at low pressures.
+    Loading = 0.0 at pressure = 0.0 is enforced here automatically for
+    interpolation at low pressures.
 
-    Default for extrapolating isotherm beyond highest pressure in available data is to throw an exception. Pass a value for `fill_value` in instantiation to extrapolate loading as `fill_value`.
+    Default for extrapolating isotherm beyond highest pressure in available data
+    is to throw an exception. Pass a value for `fill_value` in instantiation to
+    extrapolate loading as `fill_value`.
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None, fill_value=None):
         """
-        Instantiation. InterpolatorIsotherm is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. Contructs linear interpolator from `interp1d` function in Scipy during instantiation.
+        Instantiation. InterpolatorIsotherm is instantiated by passing it the
+        pure-component adsorption isotherm data in the form of a Pandas 
+        DataFrame. 
+        
+        Linear interpolation done with `interp1d` function in Scipy.
 
-        e.g. to extrapolate loading beyond highest pressure point as 100.0, pass `fill_value=100.0`.
+        e.g. to extrapolate loading beyond highest pressure point as 100.0,
+        pass `fill_value=100.0`.
 
         :param df: DataFrame adsorption isotherm data
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
-        :param fill_value: Float value of loading to assume when an attempt is made to interpolate at a pressure greater than the largest pressure observed in the data
+        :param fill_value: Float value of loading to assume when an attempt is
+            made to interpolate at a pressure greater than the largest pressure
+            observed in the data
 
         :return: self
-        :rtype: InterpolatorIsotherm 
+        :rtype: InterpolatorIsotherm
         """
-        # if pressure = 0 not in data frame, add it for interpolation between 0 and first point.
+        # if pressure = 0 not in data frame, add it for interpolation between
+        #   p = 0 and the lowest, nonzero pressure point.
         if 0.0 not in df[pressure_key].values:
-            df = pd.concat([pd.DataFrame({pressure_key:0.0, loading_key:0.0}, index=[0]), df])
+            df = pd.concat([pd.DataFrame({pressure_key: 0.0, loading_key: 0.0},
+                                         index=[0]), df])
 
         # store isotherm data in self
         #: Pandas DataFrame on which isotherm was fit
         self.df = df.sort([pressure_key], ascending=True)
-        if loading_key==None or pressure_key == None:
-            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
+        if None in [loading_key, pressure_key]:
+            raise Exception("Pass loading_key and pressure_key, names of "
+                            "loading and pressure cols in DataFrame, to "
+                            "constructor.")
         #: name of loading column
         self.loading_key = loading_key
         #: name of pressure column
         self.pressure_key = pressure_key
-        
-        if fill_value == None:
-            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key])
+
+        if fill_value is None:
+            self.interp1d = interp1d(self.df[pressure_key],
+                self.df[loading_key])
         else:
-            self.interp1d = interp1d(self.df[pressure_key], self.df[loading_key],
-                                     fill_value=fill_value, bounds_error=False)
+            self.interp1d = interp1d(self.df[pressure_key],
+                self.df[loading_key], fill_value=fill_value, bounds_error=False)
+        #: value of loading to assume beyond highest pressure in the data
         self.fill_value = fill_value
 
-    def loading(self, P):
+    def loading(self, pressure):
         """
         Linearly interpolate isotherm to compute loading at pressure P.
 
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: loading at pressure P (in corresponding units as df in instantiation)
+        :param pressure: float pressure (in corresponding units as df in
+            instantiation)
+        :return: predicted loading at pressure P (in corresponding units as df 
+            in instantiation)
         :rtype: Float or Array
         """
-        return self.interp1d(P)
+        return self.interp1d(pressure)
 
-    def spreading_pressure(self, P):
+    def spreading_pressure(self, pressure):
         """
-        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
+        Calculate reduced spreading pressure at a bulk gas pressure P.
+        (see Tarafder eqn 4)
 
-        Use numerical quadrature on isotherm data points to compute the reduced spreading pressure via the integral:
+        Use numerical quadrature on isotherm data points to compute the reduced
+        spreading pressure via the integral:
 
         .. math::
 
             \\Pi(p) = \\int_0^p \\frac{q(\\hat{p})}{ \\hat{p}} d\\hat{p}.
 
-        In this integral, the isotherm :math:`q(\\hat{p})` is represented by a linear interpolation of the data.
+        In this integral, the isotherm :math:`q(\\hat{p})` is represented by a
+        linear interpolation of the data.
 
-        :param P: float pressure (in corresponding units as df in instantiation)
+        See C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution 
+        Theory (IAST) Python Package. Computer Physics Communications.
+
+        :param pressure: float pressure (in corresponding units as df in
+            instantiation)
         :return: spreading pressure, :math:`\\Pi`
         :rtype: Float
         """
         # throw exception if interpolating outside the range.
-        if (self.fill_value == None) & (P > self.df[self.pressure_key].max()):
-            raise Exception("""To compute the spreading pressure at this bulk gas pressure,
-            we would need to extrapolate the isotherm since this pressure is outside
-            the range of the highest pressure in your pure-component isotherm data, %f.
-           
-            At present, your InterpolatorIsotherm object is set to throw an exception
-            when this occurs, as we do not have data outside this pressure range to
-            characterize the isotherm.
-           
+        if (self.fill_value == None) &\
+           (pressure > self.df[self.pressure_key].max()):
+            raise Exception("""To compute the spreading pressure at this bulk
+            gas pressure, we would need to extrapolate the isotherm since this
+            pressure is outside the range of the highest pressure in your
+            pure-component isotherm data, %f.
+
+            At present, your InterpolatorIsotherm object is set to throw an
+            exception when this occurs, as we do not have data outside this
+            pressure range to characterize the isotherm at higher pressures.
+
             Option 1: fit an analytical model to extrapolate the isotherm
-            Option 2: pass a fill_value to the construction of the InterpolatorIsotherm object.
-             Then, InterpolatorIsotherm will assume that the uptake beyond pressure %f is equal
-             to fill_value. This is reasonable if your isotherm data exhibits a plateu.
-            Option 3: Go back to the lab or computer to collect isotherm data at higher pressures.
-             (Extrapolation can be dangerous!)""" 
-           %  (self.df[self.pressure_key].max(), self.df[self.pressure_key].max()))
+            Option 2: pass a `fill_value` to the construction of the
+                InterpolatorIsotherm object. Then, InterpolatorIsotherm will
+                assume that the uptake beyond pressure %f is equal to
+                `fill_value`. This is reasonable if your isotherm data exhibits
+                a plateau at the highest pressures.
+            Option 3: Go back to the lab or computer to collect isotherm data
+                at higher pressures. (Extrapolation can be dangerous!)"""
+            % (self.df[self.pressure_key].max(),
+               self.df[self.pressure_key].max()))
 
         # Get all data points that are at nonzero pressures
-        pressures = self.df[self.pressure_key].values[self.df[self.pressure_key].values != 0.0]
-        loadings = self.df[self.loading_key].values[self.df[self.pressure_key].values != 0.0]
-        
+        pressures = self.df[self.pressure_key].values[
+            self.df[self.pressure_key].values != 0.0]
+        loadings = self.df[self.loading_key].values[
+            self.df[self.pressure_key].values != 0.0]
+
         # approximate loading up to first pressure point with Henry's law
-        # loading = KH * P
-        # KH is the initial slope in the adsorption isotherm
-        KH = loadings[0] / pressures[0]
-       
+        # loading = henry_const * P
+        # henry_const is the initial slope in the adsorption isotherm
+        henry_const = loadings[0] / pressures[0]
+
         # get how many of the points are less than pressure P
-        n_points = np.sum(pressures < P)
+        n_points = np.sum(pressures < pressure)
 
         if n_points == 0:
             # if this pressure is between 0 and first pressure point...
-            return KH * P  # \int_0^P KH P /P dP = KH * P ...
+            return henry_const * pressure  # \int_0^P henry_const P /P dP = henry_const * P ...
         else:
             # P > first pressure point
             area = loadings[0]  # area of first segment \int_0^P_1 n(P)/P dP
-            
-            # get area between P_1 and P_k, where P_k < P < P_{k+1} 
+
+            # get area between P_1 and P_k, where P_k < P < P_{k+1}
             for i in range(n_points - 1):
                 # linear interpolation of isotherm data
-                slope = (loadings[i+1] - loadings[i]) / (pressures[i+1] - pressures[i])
+                slope = (loadings[i + 1] - loadings[i]) / (pressures[i + 1] -\
+                    pressures[i])
                 intercept = loadings[i] - slope * pressures[i]
                 # add area of this segment
-                area += slope * (pressures[i+1] - pressures[i]) + intercept * np.log(pressures[i+1] / pressures[i])
-            
+                area += slope * (pressures[i + 1] - pressures[i]) + intercept *\
+                    np.log(pressures[i + 1] / pressures[i])
+
             # finally, area of last segment
-            slope = (self.loading(P) - loadings[n_points-1]) / (P - pressures[n_points-1])
-            intercept = loadings[n_points-1] - slope * pressures[n_points-1]
-            area += slope * (P - pressures[n_points-1]) + intercept * np.log(P / pressures[n_points-1])
-            
+            slope = (self.loading(pressure) - loadings[n_points - 1]) / (
+                pressure - pressures[n_points - 1])
+            intercept = loadings[n_points - 1] - slope * pressures[n_points - 1]
+            area += slope * (pressure - pressures[n_points - 1]) + intercept *\
+                np.log(pressure / pressures[n_points - 1])
+
             return area
 
 
-class SipsIsotherm:
-    """
-    Sips isotherm object to store pure-component adsorption isotherm.
-
-    The Sips adsorption isotherm is:
-
-    .. math::
-    
-        L(P) = M\\frac{K^nP^n}{1+K^nP^n},
-
-    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M` is the saturation loading, :math:`K` is the equilibrium constant, and :math:`n \in (0,1]` is the index of heterogeneity.
-    """
-
-    def __init__(self, df, loading_key=None, pressure_key=None, K_guess=None, M_guess=None, n_guess=None):
-        """
-        Instantiation. A SipsIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
-
-        :param df: DataFrame adsorption isotherm data
-        :param loading_key: String key for loading column in df
-        :param pressure_key: String key for pressure column in df
-        :param K_guess: float guess Langmuir constant (units: 1/pressure)
-        :param M_guess: float guess saturation loading (units: loading)
-        :param n_guess: float guess for index of heterogeneity
-
-        :return: self
-        :rtype: SipsIsotherm
-        """
-        # store isotherm data in self
-        #: Pandas DataFrame on which isotherm was fit
-        self.df = df
-        if loading_key==None or pressure_key == None:
-            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
-        #: name of loading column
-        self.loading_key = loading_key
-        #: name of pressure column
-        self.pressure_key = pressure_key
-        
-        # Pre-allocate params as nan
-        #: Langmuir constant K (units: 1 / pressure)
-        self.K = np.nan
-        #: Saturation loading (units: loading)
-        self.M = np.nan
-        #: index of heterogeneity (unitless)
-        self.n = np.nan
-        #: Root mean square error
-        self.RMSE = np.nan
-        
-        # for guess as starting point in minimizing RSS
-        if M_guess == None:
-            M_guess = np.max(df[pressure_key].values)  # guess saturation loading to be highest loading
-        # guess K using M_guess and lowest pressure point
-        if K_guess == None:
-            idx_min = np.argmin(df[loading_key].values)
-            K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-                M_guess - df[pressure_key].iloc[idx_min])
-        if n_guess == None:
-            n_guess = 1.0
-
-        self._fit(K_guess, M_guess, n_guess)
-
-    def _fit(self, K_guess, M_guess, n_guess):
-        """
-        Fit model to data using nonlinear optimization with least squares loss function.
-        Assigns params to self.
-
-        :param K_guess: float guess Langmuir constant (units: 1/pressure)
-        :param M_guess: float guess saturation loading (units: loading)
-        :param n_guess: float guess for index of heterogeneity
-        """
-
-        def RSS(params):
-            """
-            Residual Sum of Squares between Sips model and data in df
-            :param params: Array params = [K, M, n]
-            M: float saturation loading (units: loading)
-            K: float Langmuir constant (units: 1/pressure)
-            n: float index of heterogeneity
-            """
-            # (K * P) ^ n
-            KPn = (params[0] * self.df[self.pressure_key].values) ** params[2]
-            return np.sum((self.df[self.loading_key].values -
-                           params[1] * KPn /
-                           (1.0 + KPn)) ** 2)
-
-        # minimize RSS
-        opt_res = scipy.optimize.minimize(RSS, [K_guess, M_guess, n_guess], method='Nelder-Mead')
-        if opt_res.success == False:
-            print(opt_res.message)
-            print "M_guess = ", M_guess
-            print "K_guess = ", K_guess
-            print "n_guess = ", n_guess
-            raise Exception("""Minimization of RSS for Sips isotherm fitting failed.
-            Try a different starting point in the nonlinear optimization
-            by passing K_guess, n_guess, and M_guess to the constructor,
-            where K_guess, n_guess, and M_guess are guesses for Langmuir constant,
-            index of hetereogeneity, and saturation loading""")
-
-        # assign params
-        self.K = opt_res.x[0]
-        self.M = opt_res.x[1]
-        self.n = opt_res.x[2]
-        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
-
-    def loading(self, P):
-        """
-        Given stored Sips parameters, compute loading at pressure P.
-
-        :param P: Float or Array pressure (in corresponding units as df in instantiation)
-        :return: loading at pressure P (in corresponding units as df in instantiation)
-        :rtype: Float or Array
-        """
-        return self.M * (self.K * P) ** self.n / (1.0 + (self.K * P) ** self.n)
-
-    def spreading_pressure(self, P):
-        """
-        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
-
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: spreading pressure, :math:`\\Pi`
-        :rtype: Float
-        """
-        return self.M / self.n * np.log(1.0 + (self.K * P) ** self.n)
-
-    def print_params(self):
-        """
-        Print identified model parameters
-        """
-        print "Langmuir K (1/pressure) = ", self.K
-        print "Saturation loading, M (loading) = ", self.M
-        print "Index of heterogeneity n = ", self.n
-        print "RMSE = ", self.RMSE
-
-class DSLFIsotherm:
-    """
-    Dual-site Langmuir-Freundlich isotherm object to store pure-component adsorption isotherm.
-
-    The Sips adsorption isotherm is:
-
-    .. math::
-    
-        L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}} ,
-
-    where :math:`L` is the gas uptake, :math:`P` is pressure (fugacity), :math:`M_i` is the saturation loading of site :math:`i`, :math:`K_i` is the equilibrium constant of site :math:`i`, and :math:`n_i` is an index of heterogeneity for site :math:`i`.
-    """
-
-    def __init__(self, df, loading_key=None, pressure_key=None, K_guess=None, M_guess=None, n_guess=None):
-        """
-        Instantiation. A SipsIsotherm object is instantiated by passing it the pure component adsorption isotherm in the form of a Pandas DataFrame. The least squares data fitting is done here.
-
-        :param df: DataFrame adsorption isotherm data
-        :param loading_key: String key for loading column in df
-        :param pressure_key: String key for pressure column in df
-        :param K_guess: float guess Langmuir constant (units: 1/pressure)
-        :param M_guess: float guess saturation loading (units: loading)
-        :param n_guess: float guess for index of heterogeneity
-
-        :return: self
-        :rtype: DSLFIsotherm
-        """
-        # store isotherm data in self
-        #: Pandas DataFrame on which isotherm was fit
-        self.df = df
-        if loading_key==None or pressure_key == None:
-            raise Exception("Pass loading_key and pressure_key, names of loading and pressure cols in DataFrame, to constructor.")
-        #: name of loading column
-        self.loading_key = loading_key
-        #: name of pressure column
-        self.pressure_key = pressure_key
-        
-        # Pre-allocate params as nan
-        #: Langmuir constant, site 1 (units: 1 / pressure)
-        self.K1 = np.nan
-        #: Langmuir constant, site 2 (units: 1 / pressure)
-        self.K2 = np.nan
-        #: Saturation loading, site 1 (units: loading)
-        self.M1 = np.nan
-        #: Saturation loading, site 2 (units: loading)
-        self.M2 = np.nan
-        #: index of heterogeneity, site 1 (unitless)
-        self.n1 = np.nan
-        #: index of heterogeneity, site 2 (unitless)
-        self.n2 = np.nan
-        #: Root mean square error
-        self.RMSE = np.nan
-        
-        # for guess as starting point in minimizing RSS
-        if M_guess == None:
-            M_guess = np.max(df[loading_key].values)  # guess saturation loading to be highest loading
-        # guess K using M_guess and lowest pressure point
-        if K_guess == None:
-            idx_min = np.argmin(df[loading_key].values)
-            K_guess = df[loading_key].iloc[idx_min] / df[pressure_key].iloc[idx_min] / (
-                M_guess - df[pressure_key].iloc[idx_min])
-        if n_guess == None:
-            n_guess = 1.0
-
-        self._fit(K_guess, M_guess, n_guess)
-
-    def _fit(self, K_guess, M_guess, n_guess):
-        """
-        Fit model to data using nonlinear optimization with least squares loss function.
-        Assigns params to self.
-
-        :param K_guess: float guess Langmuir constant (units: 1/pressure)
-        :param M_guess: float guess saturation loading (units: loading)
-        :param n_guess: float guess for index of heterogeneity
-        """
-
-        def RSS(params):
-            """
-            Residual Sum of Squares between Sips model and data in df
-            :param params: Array params = [K1, M1, n1, K2, M2, n2]
-            M: float saturation loading (units: loading)
-            K: float Langmuir constant (units: 1/pressure)
-            n: float index of heterogeneity
-            """
-            # (K * P) ^ n
-            KPn_1 = (params[0] * self.df[self.pressure_key].values) ** params[2]
-            KPn_2 = (params[3] * self.df[self.pressure_key].values) ** params[5]
-            return np.sum((self.df[self.loading_key].values -
-                           params[1] * KPn_1 /
-                           (1.0 + KPn_1) - params[4] * KPn_2 /
-                           (1.0 + KPn_2)) ** 2)
-
-        # minimize RSS
-        opt_res = scipy.optimize.minimize(RSS, [K_guess, M_guess / 2.0, n_guess, K_guess, M_guess/2.0, 1.0], method='Nelder-Mead')
-        if opt_res.success == False:
-            print(opt_res.message)
-            print "M1_guess = ", M_guess
-            print "K1_guess = ", K_guess
-            print "n1_guess = ", n_guess
-            print "M2_guess = ", 0.0
-            print "K2_guess = ", K_guess
-            print "n2_guess = ", 1.0
-            raise Exception("""Minimization of RSS for Dual-site Langmuir Freundlich isotherm fitting failed.
-            Try a different starting point in the nonlinear optimization
-            by passing K_guess, n_guess, and M_guess to the constructor,
-            where K_guess, n_guess, and M_guess are guesses for Langmuir constant,
-            index of hetereogeneity, and saturation loading""")
-
-        # assign params
-        self.K1 = opt_res.x[0]
-        self.M1 = opt_res.x[1]
-        self.n1 = opt_res.x[2]
-        self.K2 = opt_res.x[3]
-        self.M2 = opt_res.x[4]
-        self.n2 = opt_res.x[5]
-        self.RMSE = np.sqrt(opt_res.fun / self.df.shape[0])
-
-    def loading(self, P):
-        """
-        Given stored Sips parameters, compute loading at pressure P.
-
-        :param P: Float or Array pressure (in corresponding units as df in instantiation)
-        :return: loading at pressure P (in corresponding units as df in instantiation)
-        :rtype: Float or Array
-        """
-        return self.M1 * (self.K1 * P) ** self.n1 / (1.0 + (self.K1 * P) ** self.n1) +\
-               self.M2 * (self.K2 * P) ** self.n2 / (1.0 + (self.K2 * P) ** self.n2)
-
-    def spreading_pressure(self, P):
-        """
-        Calculate reduced spreading pressure at a bulk gas pressure P. (see Tarafder eqn 4)
-
-        :param P: float pressure (in corresponding units as df in instantiation)
-        :return: spreading pressure, :math:`\\Pi`
-        :rtype: Float
-        """
-        return self.M1 / self.n1 * np.log(1.0 + (self.K1 * P) ** self.n1) +\
-               self.M2 / self.n2 * np.log(1.0 + (self.K2 * P) ** self.n2)
-
-    def print_params(self):
-        """
-        Print identified model parameters
-        """
-        print "Langmuir K1 (1/pressure) = ", self.K1
-        print "Langmuir K2 (1/pressure) = ", self.K2
-        print "Saturation loading, M1 (loading) = ", self.M1
-        print "Saturation loading, M2 (loading) = ", self.M2
-        print "Index of heterogeneity n1 = ", self.n1
-        print "Index of heterogeneity n2 = ", self.n2
-        print "RMSE = ", self.RMSE
-
-
-def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False, P=None):
+def plot_isotherm(isotherm, withfit=True, xlogscale=False,
+                  ylogscale=False, pressure=None):
     """
     Plot isotherm data and fit using Matplotlib.
-    
-    :param isotherm: LangmuirIsotherm,QuadraticIsotherm,InterpolatorIsotherm the adsorption isotherm object
+
+    :param isotherm: pyIAST isotherm object
     :param withfit: Bool plot fit as well
-    :param P: numpy.array optional pressure array to pass for plotting
+    :param pressure: numpy.array optional pressure array to pass for plotting
     :param xlogscale: Bool log-scale on x-axis
     :param ylogscale: Bool log-scale on y-axis
     """
 
-    fig = plt.figure()
+    plt.figure()
     if withfit:
         # array of pressures to plot model
-        if P == None:
+        if pressure is None:
             if xlogscale:
                 # do not include zero for log-scale
                 idx = isotherm.df[isotherm.pressure_key].values != 0.0
-                min_P = np.min(isotherm.df[isotherm.pressure_key].iloc[idx])
-                P = np.logspace(np.log(min_P), np.log(isotherm.df[isotherm.pressure_key].max()), 200)
+                min_p = np.min(isotherm.df[isotherm.pressure_key].iloc[idx])
+                pressure = np.logspace(np.log(min_p), np.log(isotherm.df[
+                    isotherm.pressure_key].max()), 200)
             else:
-                P = np.linspace(isotherm.df[isotherm.pressure_key].min(), isotherm.df[isotherm.pressure_key].max(), 200)
-        plt.plot(P, isotherm.loading(P))
-    plt.scatter(isotherm.df[isotherm.pressure_key], isotherm.df[isotherm.loading_key])
+                pressure = np.linspace(isotherm.df[isotherm.pressure_key].min(),
+                                       isotherm.df[isotherm.pressure_key].max(),
+                                       200)
+        plt.plot(pressure, isotherm.loading(pressure))
+    plt.scatter(isotherm.df[isotherm.pressure_key], isotherm.df[
+        isotherm.loading_key])
     if xlogscale:
         plt.xscale("log")
     if ylogscale:
@@ -836,15 +556,27 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False, ylogscale=False, P=No
     plt.ylabel('Loading')
     plt.show()
 
-def print_selectivity(q, p):
-    """
-    Calculate selectivity as a function of component loadings and bulk gas pressures
+###
+#   Tell user to switch to v1 if still using v0 classes.
+###
+depreciation_message = """Depreciated. You are using an old version of pyIAST. 
+    Run in the terminal: 
+        pip install pyiast --upgrade
+    See new class ModelIsotherm in docs, where all analytical isotherm models 
+    are now consolidated."""
 
-    :param q: numpy array of component loadings
-    :param p: partial pressures of components
-    """
-    n = np.size(q)
-    for i in range(n):
-        for j in range(i + 1, n):
-            print "Selectivity for component %d over %d = %f" % (i, j, q[i]/q[j] / (p[i]/ p[j]))
+class LangmuirIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)
 
+class BETIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)
+
+class QuadraticIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)
+
+class SipsIsotherm:
+    def __init__(self, *args, **kwargs):
+        raise Exception(depreciation_message)

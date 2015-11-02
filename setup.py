@@ -1,11 +1,12 @@
 from setuptools import setup
 
-setup(name='pyIAST',
-    version='1.0',
+setup(name='pyiast',
+    version='2.0',
     description='Ideal Adsorbed Solution Theory',
     url='https://github.com/CorySimon/pyIAST',
     download_url='https://github.com/CorySimon/pyIAST/src/tarball/1.0',
     install_requires=['numpy', 'scipy', 'pandas', 'matplotlib'],
+    keywords='chemistry isotherm iast',
     author='Cory M. Simon',
     author_email='CoryMSimon@gmail.com',
     license='MIT',
