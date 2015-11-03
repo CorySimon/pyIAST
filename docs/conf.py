@@ -12,19 +12,19 @@
 # serve to show the default.
 
 import sys, os
-from mock import Mock as MagicMock  # for local make html
+ # from mock import Mock as MagicMock  # for local make html
  # from unittest.mock import MagicMock
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # check if on rtd
 if on_rtd == False:
     import sphinx_rtd_theme # for local
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
+ # class Mock(MagicMock):
+ #     @classmethod
+ #     def __getattr__(cls, name):
+ #         return Mock()
   
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'scipy.interpolate', 'scipy.optimize']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+ # MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'scipy.interpolate', 'scipy.optimize']
+ # sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -56,7 +56,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'IAST'
+project = u'pyIAST'
 copyright = u'2015, Cory M. Simon'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -203,7 +203,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'IAST.tex', u'IAST Documentation',
+  ('index', 'IAST.tex', u'pyIAST Documentation',
    u'Cory M. Simon', 'manual'),
 ]
 
