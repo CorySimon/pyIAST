@@ -285,7 +285,7 @@ various ways.
 Methane/ethane mixture test
 ---------------------------
 
-'test/Methane and ethane test.ipynb`
+`test/Methane and ethane test.ipynb`
 
 This IPython Notebook compares pyIAST calculations to binary component
 grand-canonical Monte Carlo simulations for a methane/ethane mixture. This
