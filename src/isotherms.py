@@ -21,7 +21,7 @@ _VERSION = "1.0"
 
 #! list of models implemented in pyIAST
 _MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry", 
-    "Freundlich"]
+    "Freundlich", "TemkinApprox"]
 
 #! dictionary of parameters involved in each model
 _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
@@ -31,9 +31,9 @@ _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
                  "DSLF": {"M1": np.nan, "K1": np.nan, "n1": np.nan,
                           "M2": np.nan, "K2": np.nan, "n2": np.nan},
                  "Henry": {"KH": np.nan},
-                 "Freundlich": {"K": np.nan, "a": np.nan}
+                 "Freundlich": {"K": np.nan, "a": np.nan},
+                 "TemkinApprox": {"M": np.nan, "K": np.nan, "theta": np.nan}
                  }
-
 
 def get_default_guess_params(model, df, pressure_key, loading_key):
     """
@@ -87,7 +87,12 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
         return {"KH": saturation_loading * langmuir_k}
     
     if model == "Freundlich":
+        # equivalent to Henry's law if a = 1.0
         return {"K": saturation_loading * langmuir_k, "a": 1.0}
+    
+    if model == "TemkinApprox":
+        # equivalent to Langmuir model if theta = 0.0
+        return {"M": saturation_loading, "K": langmuir_k, "theta": 0.0}
 
 
 class ModelIsotherm:
@@ -127,6 +132,12 @@ class ModelIsotherm:
     .. math::
 
         L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}}
+
+    * Asymptotic approximation to the Temkin Isotherm (see DOI: 10.1039/C3CP55039G)
+
+    .. math::
+        
+        L(P) = M\\frac{KP}{1+KP} + M \\theta (\\frac{KP}{1+KP})^2 (\\frac{KP}{1+KP} -1)
 
     * Henry's law. Only use if your data is linear, and do not necessarily trust
       IAST results from Henry's law if the result required an extrapolation
@@ -253,6 +264,13 @@ class ModelIsotherm:
         
         if self.model == "Freundlich":
             return self.params["K"] * pressure ** self.params["a"]
+        
+        if self.model == "TemkinApprox":
+            langmuir_fractional_loading = self.params["K"] * pressure /\
+                    (1.0 + self.params["K"] * pressure)
+            return self.params["M"] * (langmuir_fractional_loading +\
+                self.params["theta"] * langmuir_fractional_loading ** 2 *\
+                langmuir_fractional_loading)
 
     def _fit(self, optimization_method):
         """
@@ -345,6 +363,12 @@ class ModelIsotherm:
         if self.model == "Freundlich":
             return self.params["K"] / self.params["a"] *\
                 pressure ** self.params["a"]
+        
+        if self.model == "TemkinApprox":
+            one_plus_kp = 1.0 + self.params["K"] * pressure
+            return self.params["M"] * (np.log(one_plus_kp) +\
+                self.params["theta"] * (2.0 * self.params["K"] * pressure + 1.0)/\
+                (2.0 * one_plus_kp ** 2))
 
     def print_params(self):
         """
