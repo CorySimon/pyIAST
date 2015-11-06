@@ -7,7 +7,8 @@ __author__ = 'Cory M. Simon'
 __all__ = ["ModelIsotherm", "InterpolatorIsotherm",
            "plot_isotherm", "_MODELS", "_MODEL_PARAMS",
            "_VERSION",
-           "LangmuirIsotherm"]
+           "LangmuirIsotherm", "SipsIsotherm", "QuadraticIsotherm"]
+# last line includes depreciated classes
 
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -20,19 +21,16 @@ import pandas as pd
 _VERSION = "1.0"
 
 #! list of models implemented in pyIAST
-_MODELS = ["Langmuir", "Quadratic", "BET", "Sips", "DSLF", "Henry", 
-    "Freundlich", "TemkinApprox"]
+_MODELS = ["Langmuir", "Quadratic", "BET", "Henry", "TemkinApprox", "DSLangmuir"]
 
 #! dictionary of parameters involved in each model
 _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
                  "Quadratic": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
                  "BET": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
-                 "Sips": {"M": np.nan, "K": np.nan, "n": np.nan},
-                 "DSLF": {"M1": np.nan, "K1": np.nan, "n1": np.nan,
-                          "M2": np.nan, "K2": np.nan, "n2": np.nan},
-                 "Henry": {"KH": np.nan},
-                 "Freundlich": {"K": np.nan, "a": np.nan},
-                 "TemkinApprox": {"M": np.nan, "K": np.nan, "theta": np.nan}
+                 "DSLangmuir": {"M1": np.nan, "K1": np.nan,
+                          "M2": np.nan, "K2": np.nan},
+                 "TemkinApprox": {"M": np.nan, "K": np.nan, "theta": np.nan},
+                 "Henry": {"KH": np.nan}
                  }
 
 def get_default_guess_params(model, df, pressure_key, loading_key):
@@ -76,19 +74,12 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
         return {"M": saturation_loading, "Ka": langmuir_k,
                 "Kb": langmuir_k * 0.01}
 
-    if model == "Sips":
-        return {"M": saturation_loading, "K": langmuir_k, "n": 1.0}
-
-    if model == "DSLF":
-        return {"M1": saturation_loading, "K1": langmuir_k, "n1": 1.0,
-                "M2": 0.01 * saturation_loading, "K2": langmuir_k, "n2": 1.0}
+    if model == "DSLangmuir":
+        return {"M1": 0.5 * saturation_loading, "K1": 0.4 * langmuir_k,
+                "M2": 0.5 * saturation_loading, "K2": 0.6 * langmuir_k}
     
     if model == "Henry":
         return {"KH": saturation_loading * langmuir_k}
-    
-    if model == "Freundlich":
-        # equivalent to Henry's law if a = 1.0
-        return {"K": saturation_loading * langmuir_k, "a": 1.0}
     
     if model == "TemkinApprox":
         # equivalent to Langmuir model if theta = 0.0
@@ -121,17 +112,11 @@ class ModelIsotherm:
 
         L(P) = M\\frac{K_A P}{(1-K_B P)(1-K_B P+ K_A P)}
 
-    * Sips adsorption isotherm
+    * Dual-site Langmuir (DSLangmuir) adsorption isotherm
 
     .. math::
 
-        L(P) = M\\frac{K^nP^n}{1+K^nP^n}
-
-    * Dual-site Langmuir-Fruendlich (DSLF) adsorption isotherm
-
-    .. math::
-
-        L(P) = M_1\\frac{(K_1 P)^{n_1}}{1+(K_1 P)^{n_1}} +  M_2\\frac{(K_2 P)^{n_2}}{1+(K_2 P)^{n_2}}
+        L(P) = M_1\\frac{K_1 P}{1+K_1 P} +  M_2\\frac{K_2 P}{1+K_2 P}
 
     * Asymptotic approximation to the Temkin Isotherm (see DOI: 10.1039/C3CP55039G)
 
@@ -148,15 +133,6 @@ class ModelIsotherm:
         
         L(P) = K_H P
     
-    * Freundlich Isotherm. Do not necessarily trust IAST results from the 
-      Freundlich isotherm if the result required an extrapolation
-      of your data; the Freundlich isotherm is unrealistic because the
-      adsorption sites will saturate at higher pressures.
-
-    .. math::
-        
-        L(P) = K P^a
-
     """
 
     def __init__(self, df, loading_key=None, pressure_key=None, model=None,
@@ -247,23 +223,15 @@ class ModelIsotherm:
                 (1.0 - self.params["Kb"] * pressure +
                 self.params["Ka"] * pressure))
 
-        if self.model == "Sips":
-            return self.params["M"] * (self.params["K"] * pressure) **\
-                self.params["n"] / (
-                1.0 + (self.params["K"] * pressure) ** self.params["n"])
-
-        if self.model == "DSLF":
-            # (K_i P) ^ n_i
-            k1p_n1 = (self.params["K1"] * pressure) ** self.params["n1"]
-            k2p_n2 = (self.params["K2"] * pressure) ** self.params["n2"]
-            return self.params["M1"] * k1p_n1 / (1.0 + k1p_n1) +\
-                self.params["M2"] * k2p_n2 / (1.0 + k2p_n2)
+        if self.model == "DSLangmuir":
+            # K_i P
+            k1p = self.params["K1"] * pressure
+            k2p = self.params["K2"] * pressure
+            return self.params["M1"] * k1p / (1.0 + k1p) +\
+                   self.params["M2"] * k2p / (1.0 + k2p)
 
         if self.model == "Henry":
             return self.params["KH"] * pressure
-        
-        if self.model == "Freundlich":
-            return self.params["K"] * pressure ** self.params["a"]
         
         if self.model == "TemkinApprox":
             langmuir_fractional_loading = self.params["K"] * pressure /\
@@ -346,23 +314,14 @@ class ModelIsotherm:
                 self.params["Ka"] * pressure) /
                 (1.0 - self.params["Kb"] * pressure))
 
-        if self.model == "Sips":
-            return self.params["M"] / self.params["n"] * np.log(1.0 +
-                (self.params["K"] * pressure) ** self.params["n"])
-
-        if self.model == "DSLF":
-            return self.params["M1"] / self.params["n1"] * np.log(
-                1.0 + (self.params["K1"] * pressure) ** self.params["n1"]
-            ) + self.params["M2"] / self.params["n2"] * np.log(
-                1.0 + (self.params["K2"] * pressure) ** self.params["n2"]
-            )
+        if self.model == "DSLangmuir":
+            return self.params["M1"] * np.log(
+                    1.0 + self.params["K1"] * pressure) +\
+                   self.params["M2"] * np.log(
+                    1.0 + self.params["K2"] * pressure)
 
         if self.model == "Henry":
             return self.params["KH"] * pressure
-        
-        if self.model == "Freundlich":
-            return self.params["K"] / self.params["a"] *\
-                pressure ** self.params["a"]
         
         if self.model == "TemkinApprox":
             one_plus_kp = 1.0 + self.params["K"] * pressure
@@ -603,4 +562,7 @@ class QuadraticIsotherm:
 
 class SipsIsotherm:
     def __init__(self, *args, **kwargs):
-        raise Exception(depreciation_message)
+        raise Exception("""This isotherm model actually cannot be used in IAST
+        calculations because it does not have a finite slope at the origin. See
+        O. Talu and A. L. Myers. Rigorous thermodynamic treatment of gas 
+        adsorption. AIChE J. 1988.""")
