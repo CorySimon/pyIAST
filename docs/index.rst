@@ -5,7 +5,7 @@ This Python package, `pyIAST <https://github.com/CorySimon/pyIAST>`_, predicts m
 
 pyIAST characterizes a pure-component adsorption isotherm from a set of simulated or experimental data points by:
 
-(i) fitting an analytical model to the data [e.g., Langmuir, quadratic, BET, Sips, or Dual-site Langmuir Freundlich].
+(i) fitting an analytical model to the data [e.g., Langmuir, quadratic, BET, Dual-site Langmuir, Henry's law, approximated Temkin isotherm].
 
 (ii) linearly interpolating the data.
 
