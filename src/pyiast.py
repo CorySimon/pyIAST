@@ -328,7 +328,7 @@ def print_selectivity(component_loadings, partial_pressures):
     :param partial_pressures: partial pressures of components
     """
     n_components = np.size(component_loadings)
-    for i in range(n):
+    for i in range(n_components):
         for j in range(i + 1, n_components):
             print "Selectivity for component %d over %d = %f" % (i, j,
                                 component_loadings[i] / component_loadings[j] /
