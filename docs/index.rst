@@ -218,7 +218,7 @@ Should I use `ModelIsotherm` or `InterpolatorIsotherm`?
 
 See the discussion in our manuscript:
 
-C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Submitted to Computer Physics Communications.
+C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Computer Physics Communications. (2015)
 
 --------------------------
 Peform an IAST calculation
@@ -274,7 +274,7 @@ In our IAST calculations, we follow the method to solve the equations outlined i
 
 We provide an accessible derivation of IAST and discuss practical issues in applying IAST in our manuscript:
 
-    \C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Submitted to Computer Physics Communications.
+    \C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Computer Physics Communications. (2015)
 
 =====
 Tests
