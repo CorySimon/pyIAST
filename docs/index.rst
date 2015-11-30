@@ -15,7 +15,7 @@ pyIAST can handle an arbitrary number of components.
 
 Please see our article for theoretical details and consider citing our article if you used pyIAST in your research:
 
-    \C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Submitted to Computer Physics Communications.
+    \C. Simon, B. Smit, M. Haranczyk. pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. Computer Physics Communications. (2015)
 
 ------------
 
@@ -73,7 +73,9 @@ If new to Python, I *highly* recommend working in the `IPython Notebook <http://
 pyIAST tutorial
 ===============
 
-For this tutorial on pyIAST, enter the `/test` directory of pyIAST. While you can type this code into the Python shell, I highly recommend instead opening an `IPython Notebook <http://ipython.org/notebook.html>`_. First, import pyIAST into Python after installation.
+For this tutorial on pyIAST, enter the `/test` directory of pyIAST. While you can type this code into the Python shell, I highly recommend instead opening an `IPython Notebook <http://ipython.org/notebook.html>`_.
+
+First, import pyIAST into Python after installation.
 
 .. code-block:: python
 
@@ -106,7 +108,7 @@ You can check that your data has loaded correctly by looking at the head of the 
 
 The units for pressure and loading in both DataFrames must be consistent; loading of gas must be in a molar quantity for IAST to apply (e.g. mmol/g or mmol/cm\ :superscript:`3`). pyIAST will then work with these units throughout.
 
-To load data into a Pandas DataFrame that is not `CSV`, see the `documentation for Pandas <http://pandas.pydata.org/>`_. Pandas is generally a very useful tool for manipulating data. See `10 Minutes to pandas <http://pandas.pydata.org/pandas-docs/stable/10min.html>`_.
+To load data into a Pandas DataFrame that is not in the `CSV` format, see the `documentation for Pandas <http://pandas.pydata.org/>`_. Pandas is generally a very useful tool for manipulating data. See the `10 Minutes to pandas <http://pandas.pydata.org/pandas-docs/stable/10min.html>`_ tutorial.
 
 -----------------------------------------
 Construct pure-component isotherm objects
@@ -174,7 +176,7 @@ or the reduced spreading pressure (used for IAST calculations) via:
     ch4_isotherm.spreading_pressure(40.0)
     # 18.008092685521699 (mmol/g)
 
-pyIAST fits other models (see the list `pyiast._MODELS` for available models), for example, the quadratic isotherm model, by passing `model="Quadratic"` into the construction of the `ModelIsotherm` instance.
+pyIAST fits other models (see the list `pyiast._MODELS` for available models), for example, the quadratic isotherm model, by passing `model="Quadratic"` during the construction of the `ModelIsotherm` instance.
 
 A nonlinear data-fitting routine is used in pyIAST to fit the model parameters to the data. pyIAST uses heuristics for starting guesses for these model parameters. But, you can pass your own parameter guesses in the form of a dictionary `param_guess` when you construct the instance. For example, to use 25.0 as a starting guess for the `M` parameter in the Langmuir model:
 
@@ -186,7 +188,7 @@ A nonlinear data-fitting routine is used in pyIAST to fit the model parameters t
                                         model="Langmuir",
                                         param_guess={"M": 25.0})
 
-You may need to pass your own starting guess for the parameters if the default guesses in pyIAST were not good enough for convergence when solving the nonlinear equations of IAST. You can see the naming convention for model parameters in pyIAST in the dictionary `pyiast._MODEL_PARAMS` as well as in the documentation for the `ModelIsotherm` class at the end of this page. Further, you can change the method used to solve the IAST equations by passing e.g. `optimization_method="Powell"` if you encounter convergence problems. For a list of optimization methods, see the `Scipy website <http://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize>`_.
+You may need to pass your own starting guess for the parameters if the default guesses in pyIAST were not good enough for convergence when solving the nonlinear equations of IAST. You can see the naming convention for model parameters in pyIAST in the dictionary `pyiast._MODEL_PARAMS` as well as in the documentation for the `ModelIsotherm` class at the end of this page. Further, you can change the method used to solve the IAST equations by passing e.g. `optimization_method="Powell"` if you encounter convergence problems. For a list of supported optimization methods, see the `Scipy website <http://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize>`_.
 
 InterpolatorIsotherm
 ^^^^^^^^^^^^^^^^^^^^
@@ -199,7 +201,7 @@ The `InterpolatorIsotherm`, where pyIAST linearly interpolates the isotherm data
                                         loading_key="Loading(mmol/g)", 
                                         pressure_key="Pressure(bar)")
 
-This `InterpolatorIsotherm` object behaves analogously to the `ModelIsotherm`; for example `ch4_isotherm.loading(40.0)` returns the loading at 40.0 bar via linear interpolation and `pyiast.plot_isotherm(ch4_isotherm)` still plots the isotherm and linear interpolation. When we attempt to extrapolate beyond the data point with the highest pressure, the `ch4_isotherm` above will throw an exception.
+This `InterpolatorIsotherm` object behaves analogously to the `ModelIsotherm`; for example `ch4_isotherm.loading(40.0)` returns the loading at 40.0 bar via linear interpolation and `pyiast.plot_isotherm(ch4_isotherm)` plots the isotherm and linear interpolation. When we attempt to extrapolate beyond the data point with the highest pressure, the `ch4_isotherm` above will throw an exception.
 
 The `InterpolatorIsotherm` has an additional, optional argument `fill_value` that tells us what loading to assume when we attempt to extrapolate beyond the highest pressure observed in the pure-component isotherm data. For example, if the isotherm looks reasonably saturated, we can assume that the loading at the highest pressure point is equal to the largest loading in the data:
 
