@@ -272,8 +272,8 @@ class ModelIsotherm:
         opt_res = scipy.optimize.minimize(residual_sum_of_squares, guess,
                                           method=optimization_method)
         if not opt_res.success:
-            print opt_res.message
-            print "\n\tDefault starting guess for parameters:", self.param_guess
+            print(opt_res.message)
+            print("\n\tDefault starting guess for parameters:", self.param_guess)
             raise Exception("""Minimization of RSS for %s isotherm fitting
             failed. Try a different starting point in the nonlinear optimization
             by passing a dictionary of parameter guesses, param_guess, to the
@@ -336,10 +336,10 @@ class ModelIsotherm:
         """
         Print identified model parameters
         """
-        print "%s identified model parameters:" % self.model
+        print("%s identified model parameters:" % self.model)
         for param, val in self.params.iteritems():
-            print "\t%s = %f" % (param, val)
-        print "RMSE = ", self.rmse
+            print("\t%s = %f" % (param, val))
+        print("RMSE = ", self.rmse)
 
 
 class InterpolatorIsotherm:
