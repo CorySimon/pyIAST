@@ -1,7 +1,7 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(name='pyiast',
-    version='1.1',
+    version='1.3',
     description='Ideal Adsorbed Solution Theory',
     url='https://github.com/CorySimon/pyIAST',
     download_url='https://github.com/CorySimon/pyIAST/tarball/master',
@@ -11,5 +11,5 @@ setup(name='pyiast',
     author_email='CoryMSimon@gmail.com',
     license='MIT',
     package_dir={'':'src'},
-    packages=find_packages(),
+    packages=[''],
     zip_safe=False)
