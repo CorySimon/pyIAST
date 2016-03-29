@@ -1,4 +1,7 @@
-# pyIAST: Python package for Ideal Adsorbed Solution Theory
+# pyIAST
+## Python package for Ideal Adsorbed Solution Theory
+
+![alt tag](docs/pyIAST_logo.png)
 
 [![Documentation Status](https://readthedocs.org/projects/pyiast/badge/?version=latest)](http://pyiast.readthedocs.org/en/latest/?badge=latest)
 
