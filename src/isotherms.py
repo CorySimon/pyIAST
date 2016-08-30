@@ -386,7 +386,7 @@ class InterpolatorIsotherm:
 
         # store isotherm data in self
         #: Pandas DataFrame on which isotherm was fit
-        self.df = df.sort([pressure_key], ascending=True)
+        self.df = df.sort_values(pressure_key, ascending=True)
         if None in [loading_key, pressure_key]:
             raise Exception("Pass loading_key and pressure_key, names of "
                             "loading and pressure cols in DataFrame, to "
