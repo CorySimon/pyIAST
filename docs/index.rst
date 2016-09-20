@@ -340,7 +340,7 @@ FAQ
 How do I implement a custom analytical model for my adsorption isotherm?
 ------------------------------------------------------------------------
 You may modify the `ModelIsotherm` class to fit any analytical equation of your
-choosing to your pure component adsorption isotherm data. pyIAST can then use this model fit 
+choosing to your pure-component adsorption isotherm data. pyIAST can then use this model fit 
 to conduct IAST calculations.
 In the code `src/isotherms.py`, you may implement a custom adsorption isotherm as follows:
 
@@ -349,6 +349,22 @@ In the code `src/isotherms.py`, you may implement a custom adsorption isotherm a
 3. Provide a default guess for the parameters in `get_default_guess_params`.
 4. In the `loading` attribute of the `ModelIsotherm` class, add the expression for the gas uptake in your analytical model as a function of pressure and the parameters.
 5. In the `spreading_pressure` attribute of the `ModelIsotherm` class, add the expression for the spreading pressure in your model. This is obtained from an integral involving the loading, see our manuscript.
+
+--------------------------------------------------------------------------------------------------------------------
+I keep getting a warning that pyIAST needs to extrapolate my pure-component adsorption isotherm data. What can I do?
+--------------------------------------------------------------------------------------------------------------------
+Depending on the conditions of the mixture (both mole fractions and total pressure) in which you are interested, an IAST calculation may require information about how the pure-component adsorption isotherms behave at large pressures-- pressures higher than your instrument or simulation explored. This is not a problem with pyIAST; no piece of software can overcome this requirement. The advantage of fitting a physics-based analytical model to your adsorption isotherm, such as the Langmuir model, is that this analytical equation extrapolates your data beyond the data point corresponding to the highest pressure. Still, you need to make sure that you trust this extrapolation in order to trust the IAST result. If your adsorption isotherm does not exhibit much curvature, then intuitively it is difficult to predict the pressure at which it will start to saturate and what the saturation loading will be. In that case, the extrapolation is likely to be highly inaccurate. If your adsorption isotherm exhibits curvature and has begun to saturate, you likely can trust the extrapolation more. Another option to extrapolate your adsorption isotherm is to pass a `fill_value` to the `InterpolatorIsotherm` constructor, which approximates the gas uptake as constant and equal to `fill_value` beyond the highest pressure observed in the data.
+
+In summary, be cautious of IAST results that required an extrapolation of the pure-component adsorption isotherm. You may need to go back to the lab to collect data at higher pressures. If you are a computational scientist, you have no excuse but to simulate the uptake at a higher pressure.
+
+The positive news is that the IAST result is less sensitive to the data at higher pressures; note that the integrand in the equation for spreading pressure is divided by pressure.
+
+----------------------------------------------------------------------------------------------------------
+Can I apply IAST to a metal-organic framework that is flexible and changes its structure when gas adsorbs?
+----------------------------------------------------------------------------------------------------------
+No. An assumption of IAST is that the thermodynamic properties of the adsorbent change negligibly upon adsorption.
+
+For breathing or gate-opening [multi-stable] metal-organic frameworks, a special theory has been developed [here](http://pubs.rsc.org/en/Content/ArticleHtml/2010/CP/c003434g). This has not yet been implemented in pyIAST.
 
 ===============================
 Class documentation and details
