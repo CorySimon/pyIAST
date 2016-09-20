@@ -11,6 +11,6 @@ pyIAST predicts mixted-gas adsorption isotherms in a nanoporous material from pu
 
 [Documentation for pyIAST is here.](http://pyiast.readthedocs.org/en/latest/)
 
-If you found pyIAST useful, please consider citing our manuscript presenting pyIAST:
+If used pyIAST in your research, please cite our manuscript:
 
 :point_right: C. Simon, B. Smit, M. Haranczyk. (2016) pyIAST: Ideal Adsorbed Solution Theory (IAST) Python Package. *Computer Physics Communications*. 200, pp.364-380. [DOI](http://dx.doi.org/doi:10.1016/j.cpc.2015.11.016) [Preprint](manuscript.pdf)
