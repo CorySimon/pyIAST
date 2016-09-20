@@ -364,7 +364,9 @@ Can I apply IAST to a metal-organic framework that is flexible and changes its s
 ----------------------------------------------------------------------------------------------------------
 No. An assumption of IAST is that the thermodynamic properties of the adsorbent change negligibly upon adsorption.
 
-For breathing or gate-opening [multi-stable] metal-organic frameworks, a special theory has been developed [here](http://pubs.rsc.org/en/Content/ArticleHtml/2010/CP/c003434g). This has not yet been implemented in pyIAST.
+For breathing or gate-opening [multi-stable] metal-organic frameworks, a special theory has been developed `here <http://pubs.rsc.org/en/Content/ArticleHtml/2010/CP/c003434g>`_. This has not yet been implemented in pyIAST.
+
+Predicting mixture adsorption isotherms in porous materials that exhbit other modes of flexibility (e.g. ligand rotations or gradual swelling) is an active area of research.
 
 ===============================
 Class documentation and details
