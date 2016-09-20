@@ -345,14 +345,10 @@ to conduct IAST calculations.
 In the code `src/isotherms.py`, you may implement a custom adsorption isotherm as follows:
 
 1. Add the name of your isotherm to the list `_MODELS`.
-2. Add the names of the parameters that are involved in your custom model to the dictionary
-`_MODEL_PARAMS` and initialize them as `np.nan`.
+2. Add the names of the parameters that are involved in your custom model to the dictionary `_MODEL_PARAMS` and initialize them as `np.nan`.
 3. Provide a default guess for the parameters in `get_default_guess_params`.
-4. In the `loading` attribute of the `ModelIsotherm` class, add the expression for the gas
-uptake in your analytical model as a function of pressure and the parameters.
-5. In the `spreading_pressure` attribute of the `ModelIsotherm` class, add the expression for
-the spreading pressure in your model. This is obtained from an integral involving the loading,
-see our manuscript.
+4. In the `loading` attribute of the `ModelIsotherm` class, add the expression for the gas uptake in your analytical model as a function of pressure and the parameters.
+5. In the `spreading_pressure` attribute of the `ModelIsotherm` class, add the expression for the spreading pressure in your model. This is obtained from an integral involving the loading, see our manuscript.
 
 ===============================
 Class documentation and details
