@@ -359,6 +359,8 @@ In summary, be cautious of IAST results that required an extrapolation of the pu
 
 The positive news is that the IAST result is less sensitive to the data at higher pressures; note that the integrand in the equation for spreading pressure is divided by pressure.
 
+This warning message can be suppressed by passing `warningoff=True` to the call to the `pyiast.iast()` function.
+
 ----------------------------------------------------------------------------------------------------------
 Can I apply IAST to a metal-organic framework that is flexible and changes its structure when gas adsorbs?
 ----------------------------------------------------------------------------------------------------------
