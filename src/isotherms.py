@@ -187,7 +187,7 @@ class ModelIsotherm:
                                                     loading_key)
         # Override defaults if user provides param_guess dictionary
         if param_guess is not None:
-            for param, guess_val in param_guess.iteritems():
+            for param, guess_val in param_guess.items():
                 if param not in self.param_guess.keys():
                     raise Exception("%s is not a valid parameter"
                                     " in the %s model." % (param, model))
@@ -337,7 +337,7 @@ class ModelIsotherm:
         Print identified model parameters
         """
         print("%s identified model parameters:" % self.model)
-        for param, val in self.params.iteritems():
+        for param, val in self.params.items():
             print("\t%s = %f" % (param, val))
         print("RMSE = ", self.rmse)
 
