@@ -4,6 +4,12 @@ pure-component adsorption isotherm models from the `isotherms` module.
 """
 __author__ = 'Cory M. Simon'
 
+# This code is written for Python 3.
+import sys
+if sys.version_info[0] != 3:
+    print("pyIAST now requires Python 3.")
+    sys.exit(1)
+
 from isotherms import _MODELS, _MODEL_PARAMS, _VERSION, ModelIsotherm, \
     InterpolatorIsotherm, plot_isotherm
 # depreciated classes
