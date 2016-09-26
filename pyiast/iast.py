@@ -10,10 +10,10 @@ if sys.version_info[0] != 3:
     print("pyIAST now requires Python 3.")
     sys.exit(1)
 
-from isotherms import _MODELS, _MODEL_PARAMS, _VERSION, ModelIsotherm, \
+from pyiast.isotherms import _MODELS, _MODEL_PARAMS, _VERSION, ModelIsotherm, \
     InterpolatorIsotherm, plot_isotherm
 # depreciated classes
-from isotherms import LangmuirIsotherm, QuadraticIsotherm, BETIsotherm, \
+from pyiast.isotherms import LangmuirIsotherm, QuadraticIsotherm, BETIsotherm, \
     SipsIsotherm
 import scipy.optimize
 import numpy as np
@@ -102,7 +102,7 @@ def iast(partial_pressures, isotherms, verboseflag=False, warningoff=False,
         loading_guess = np.array(loading_guess)
         adsorbed_mole_fraction_guess = loading_guess / np.sum(loading_guess)
     else:
-        np.testing.assert_almost_equal(1.0, 
+        np.testing.assert_almost_equal(1.0,
                                        np.sum(adsorbed_mole_fraction_guess),
                                        decimal=4)
         # if list, convert to numpy array
