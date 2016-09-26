@@ -22,7 +22,7 @@ _VERSION = "1.4"
 
 # ! list of models implemented in pyIAST
 _MODELS = ["Langmuir", "Quadratic", "BET", "Henry", "TemkinApprox",
-    "DSLangmuir"]
+    "DSLangmuir", "LangmuirFreundlich"]
 
 # ! dictionary of parameters involved in each model
 _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
@@ -31,7 +31,8 @@ _MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
                  "DSLangmuir": {"M1": np.nan, "K1": np.nan,
                                 "M2": np.nan, "K2": np.nan},
                  "TemkinApprox": {"M": np.nan, "K": np.nan, "theta": np.nan},
-                 "Henry": {"KH": np.nan}
+                 "Henry": {"KH": np.nan},
+                 "LangmuirFreundlich": {"N": np.nan, "b": np.nan, "nu": np.nan}
                  }
 
 
@@ -86,6 +87,9 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     if model == "TemkinApprox":
         # equivalent to Langmuir model if theta = 0.0
         return {"M": saturation_loading, "K": langmuir_k, "theta": 0.0}
+
+    if model == "LangmuirFreundlich":
+        return {"N": saturation_loading, "b": langmuir_k * 1e-5, "nu": 1.0}
 
 
 class ModelIsotherm:
@@ -243,6 +247,10 @@ class ModelIsotherm:
                      self.params["theta"] * langmuir_fractional_loading ** 2 * \
                      langmuir_fractional_loading)
 
+        if self.model == "LangmuirFreundlich":
+            b_p_nu = self.params["b"] * pressure**self.params["nu"]
+            return self.params["N"] * b_p_nu / (1 + b_p_nu)
+
     def _fit(self, optimization_method):
         """
         Fit model to data using nonlinear optimization with least squares loss
@@ -331,6 +339,10 @@ class ModelIsotherm:
             return self.params["M"] * (np.log(one_plus_kp) +
                self.params["theta"] * (2.0 * self.params["K"] * pressure + 1.0)/
                                       (2.0 * one_plus_kp ** 2))
+
+        if self.model == "LangmuirFreundlich":
+            b_p_nu = self.params["b"] * pressure**self.params["nu"]
+            return self.params["N"] * np.log(1 + b_p_nu) / self.params["nu"]
 
     def print_params(self):
         """
