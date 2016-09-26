@@ -1,4 +1,9 @@
+import sys
 from setuptools import setup
+
+if sys.version_info[0] != 3:
+    print("pyIAST now requires Python 3.")
+    sys.exit(1)
 
 setup(name='pyiast',
     version='1.4',
