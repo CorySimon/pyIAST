@@ -15,6 +15,5 @@ setup(name='pyiast',
     author='Cory M. Simon',
     author_email='CoryMSimon@gmail.com',
     license='MIT',
-    package_dir={'':'src'},
-    packages=[''],
+    packages=['pyiast'],
     zip_safe=False)
