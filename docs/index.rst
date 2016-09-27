@@ -350,6 +350,16 @@ In the code `pyiast/isotherms.py`, you may implement a custom adsorption isother
 4. In the `loading` attribute of the `ModelIsotherm` class, add the expression for the gas uptake in your analytical model as a function of pressure and the parameters.
 5. In the `spreading_pressure` attribute of the `ModelIsotherm` class, add the expression for the spreading pressure in your model. This is obtained from an integral involving the loading, see our manuscript.
 
+------------------------------------------------------------------------------------
+Why don't you include the commonly-used Freundlich or Langmuir-Freundlich isotherms?
+------------------------------------------------------------------------------------
+
+These [empirical] adsorption isotherm models are not thermodynamically consistent; that is, their limiting behavior at low pressure is not linear. As such, they should not be used in an IAST calculation.
+
+Please see the discussion `here <http://onlinelibrary.wiley.com/doi/10.1002/aic.690341114/pdf>`_:
+
+    \O. Talu and A. Myers. Rigorous Thermodynamic Treatment of Gas Adsorption. (1988) AIChE J. (34) 11
+
 --------------------------------------------------------------------------------------------------------------------
 I keep getting a warning that pyIAST needs to extrapolate my pure-component adsorption isotherm data. What can I do?
 --------------------------------------------------------------------------------------------------------------------
