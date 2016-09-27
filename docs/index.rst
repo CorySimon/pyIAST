@@ -342,7 +342,7 @@ How do I implement a custom analytical model for my adsorption isotherm?
 You may modify the `ModelIsotherm` class to fit any analytical equation of your
 choosing to your pure-component adsorption isotherm data. pyIAST can then use this model fit 
 to conduct IAST calculations.
-In the code `src/isotherms.py`, you may implement a custom adsorption isotherm as follows:
+In the code `pyiast/isotherms.py`, you may implement a custom adsorption isotherm as follows:
 
 1. Add the name of your isotherm to the list `_MODELS`.
 2. Add the names of the parameters that are involved in your custom model to the dictionary `_MODEL_PARAMS` and initialize them as `np.nan`.
