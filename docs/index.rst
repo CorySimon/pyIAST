@@ -67,13 +67,13 @@ If on Windows, run the setup file from a command prompt (Start --> Accessories):
 New to Python?
 ==============
 
-If new to Python, I *highly* recommend working in the `IPython Notebook <http://ipython.org/notebook.html>`_; test scripts and tutorials for this code are written in IPython Notebooks. The instructions for getting started with Python for scientific computing are `here <http://ipython.org/install.html>`_.
+If new to Python, I *highly* recommend working in the `Jupyter Notebook <http://jupyter.org/>`_; test scripts and tutorials for this code are written in Jupyter Notebooks. The instructions for getting started with Python for scientific computing are `here <http://jupyter.org/install.html>`_.
 
 ===============
 pyIAST tutorial
 ===============
 
-For this tutorial on pyIAST, enter the `/test` directory of pyIAST. While you can type this code into the Python shell, I highly recommend instead opening an `IPython Notebook <http://ipython.org/notebook.html>`_.
+For this tutorial on pyIAST, enter the `/test` directory of pyIAST. While you can type this code into the Python shell, I highly recommend instead opening a `Jupyter Notebook <http://jupyter.org/>`_.
 
 First, import pyIAST into Python after installation.
 
@@ -258,7 +258,7 @@ which will return `y`, the required bulk gas phase mole fractions, and `q`, an a
 
 ------------
 
-A variant of this tutorial, where we generate Fig. 2, is available in `this IPython Notebook <https://github.com/CorySimon/pyIAST/blob/master/test/Methane%20and%20ethane%20test.ipynb>`_.
+A variant of this tutorial, where we generate Fig. 2, is available in `this Jupyter Notebook <https://github.com/CorySimon/pyIAST/blob/master/test/Methane%20and%20ethane%20test.ipynb>`_.
 
 ======
 Theory
@@ -280,7 +280,7 @@ We provide an accessible derivation of IAST and discuss practical issues in appl
 Tests
 =====
 
-In the `/test` directory, you will find IPython Notebooks that test pyIAST in
+In the `/test` directory, you will find Jupyter Notebooks that test pyIAST in
 various ways.
 
 ---------------------------
@@ -289,7 +289,7 @@ Methane/ethane mixture test
 
 `test/Methane and ethane test.ipynb`
 
-This IPython Notebook compares pyIAST calculations to binary component
+This Jupyter Notebook compares pyIAST calculations to binary component
 grand-canonical Monte Carlo simulations for a methane/ethane mixture. This
 notebook reproduces Fig. 2, which confirms that pyIAST yields component loadings
 consistent with the binary grand-canonical Monte Carlo simulations.
@@ -300,7 +300,7 @@ Isotherm fitting tests
 
 `test/Isotherm tests.ipynb`
 
-This IPython Notebook generates synthetic data for each isotherm model, stores
+This Jupyter Notebook generates synthetic data for each isotherm model, stores
 the data in a Pandas DataFrame, and uses pyIAST to construct a `ModelIsotherm`
 using this data; this notebook checks for consistency between the identified
 model parameters and those used to generate the synthetic data. This ensures
@@ -327,7 +327,7 @@ mixed gas adsorption isotherm :math:`N_i(p_i)` follows the competitive Langmuir 
 
    N_i(p_i) = M \frac{K_i p_i}{1+ \sum_j K_j p_j}.
 
-In this IPython Notebook, we generate synthetic data that follows three
+In this Jupyter Notebook, we generate synthetic data that follows three
 Langmuir adsorption isotherm models with the same saturation loading but
 different Langmuir constants. We then use pyIAST to predict the mixed gas
 adsorption isotherm and check that it is consistent with the competitive
