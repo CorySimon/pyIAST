@@ -6,7 +6,7 @@ if sys.version_info[0] != 3:
     sys.exit(1)
 
 setup(name='pyiast',
-    version='1.4',
+    version='1.4.2',
     description='Ideal Adsorbed Solution Theory',
     url='https://github.com/CorySimon/pyIAST',
     download_url='https://github.com/CorySimon/pyIAST/tarball/master',

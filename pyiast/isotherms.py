@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # ! version
-_VERSION = "1.4"
+_VERSION = "1.4.2"
 
 # ! list of models implemented in pyIAST
 _MODELS = ["Langmuir", "Quadratic", "BET", "Henry", "TemkinApprox",
