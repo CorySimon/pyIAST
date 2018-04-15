@@ -241,7 +241,7 @@ class ModelIsotherm:
                                           (1.0 + self.params["K"] * pressure)
             return self.params["M"] * (langmuir_fractional_loading + \
                      self.params["theta"] * langmuir_fractional_loading ** 2 * \
-                     (langmuir_fractional_loading-1))
+                     (langmuir_fractional_loading - 1))
 
     def _fit(self, optimization_method):
         """
