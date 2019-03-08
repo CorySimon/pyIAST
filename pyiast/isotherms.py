@@ -3,11 +3,15 @@ This module contains objects to characterize the pure-component adsorption
 isotherms from experimental or simulated data. These will be fed into the
 IAST functions in pyiast.py.
 """
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__ = 'Cory M. Simon'
-__all__ = ["ModelIsotherm", "InterpolatorIsotherm",
-           "plot_isotherm", "_MODELS", "_MODEL_PARAMS",
-           "_VERSION",
-           "LangmuirIsotherm", "SipsIsotherm", "QuadraticIsotherm"]
+__all__ = [
+    "ModelIsotherm", "InterpolatorIsotherm", "plot_isotherm", "_MODELS",
+    "_MODEL_PARAMS", "_VERSION", "LangmuirIsotherm", "SipsIsotherm",
+    "QuadraticIsotherm"
+]
 # last line includes depreciated classes
 
 import scipy.optimize
@@ -21,18 +25,41 @@ import pandas as pd
 _VERSION = "1.4.2"
 
 # ! list of models implemented in pyIAST
-_MODELS = ["Langmuir", "Quadratic", "BET", "Henry", "TemkinApprox",
-    "DSLangmuir"]
+_MODELS = [
+    "Langmuir", "Quadratic", "BET", "Henry", "TemkinApprox", "DSLangmuir"
+]
 
 # ! dictionary of parameters involved in each model
-_MODEL_PARAMS = {"Langmuir": {"M": np.nan, "K": np.nan},
-                 "Quadratic": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
-                 "BET": {"M": np.nan, "Ka": np.nan, "Kb": np.nan},
-                 "DSLangmuir": {"M1": np.nan, "K1": np.nan,
-                                "M2": np.nan, "K2": np.nan},
-                 "TemkinApprox": {"M": np.nan, "K": np.nan, "theta": np.nan},
-                 "Henry": {"KH": np.nan}
-                 }
+_MODEL_PARAMS = {
+    "Langmuir": {
+        "M": np.nan,
+        "K": np.nan
+    },
+    "Quadratic": {
+        "M": np.nan,
+        "Ka": np.nan,
+        "Kb": np.nan
+    },
+    "BET": {
+        "M": np.nan,
+        "Ka": np.nan,
+        "Kb": np.nan
+    },
+    "DSLangmuir": {
+        "M1": np.nan,
+        "K1": np.nan,
+        "M2": np.nan,
+        "K2": np.nan
+    },
+    "TemkinApprox": {
+        "M": np.nan,
+        "K": np.nan,
+        "theta": np.nan
+    },
+    "Henry": {
+        "KH": np.nan
+    }
+}
 
 
 def get_default_guess_params(model, df, pressure_key, loading_key):
@@ -68,17 +95,27 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     if model == "Quadratic":
         # Quadratic = Langmuir when Kb = Ka^2. This is our default assumption.
         # Also, M is half of the saturation loading in the Quadratic model.
-        return {"M": saturation_loading / 2.0, "Ka": langmuir_k,
-                "Kb": langmuir_k ** 2.0}
+        return {
+            "M": saturation_loading / 2.0,
+            "Ka": langmuir_k,
+            "Kb": langmuir_k**2.0
+        }
 
     if model == "BET":
         # BET = Langmuir when Kb = 0.0. This is our default assumption.
-        return {"M": saturation_loading, "Ka": langmuir_k,
-                "Kb": langmuir_k * 0.01}
+        return {
+            "M": saturation_loading,
+            "Ka": langmuir_k,
+            "Kb": langmuir_k * 0.01
+        }
 
     if model == "DSLangmuir":
-        return {"M1": 0.5 * saturation_loading, "K1": 0.4 * langmuir_k,
-                "M2": 0.5 * saturation_loading, "K2": 0.6 * langmuir_k}
+        return {
+            "M1": 0.5 * saturation_loading,
+            "K1": 0.4 * langmuir_k,
+            "M2": 0.5 * saturation_loading,
+            "K2": 0.6 * langmuir_k
+        }
 
     if model == "Henry":
         return {"KH": saturation_loading * langmuir_k}
@@ -138,8 +175,13 @@ class ModelIsotherm:
 
     """
 
-    def __init__(self, df, loading_key=None, pressure_key=None, model=None,
-                 param_guess=None, optimization_method="Nelder-Mead"):
+    def __init__(self,
+                 df,
+                 loading_key=None,
+                 pressure_key=None,
+                 model=None,
+                 param_guess=None,
+                 optimization_method="Nelder-Mead"):
         """
         Instantiation. A `ModelIsotherm` class is instantiated by passing it the
         pure-component adsorption isotherm in the form of a Pandas DataFrame.
@@ -188,7 +230,7 @@ class ModelIsotherm:
         # Override defaults if user provides param_guess dictionary
         if param_guess is not None:
             for param, guess_val in param_guess.items():
-                if param not in self.param_guess.keys():
+                if param not in list(self.param_guess.keys()):
                     raise Exception("%s is not a valid parameter"
                                     " in the %s model." % (param, model))
                 self.param_guess[param] = guess_val
@@ -215,10 +257,10 @@ class ModelIsotherm:
                    (1.0 + self.params["K"] * pressure)
 
         if self.model == "Quadratic":
-            return self.params["M"] * (self.params["Ka"] +
-                       2.0 * self.params["Kb"] * pressure) * pressure / (
-                       1.0 + self.params["Ka"] * pressure +
-                       self.params["Kb"] * pressure ** 2)
+            return self.params["M"] * (
+                self.params["Ka"] + 2.0 * self.params["Kb"] * pressure
+            ) * pressure / (1.0 + self.params["Ka"] * pressure +
+                            self.params["Kb"] * pressure**2)
 
         if self.model == "BET":
             return self.params["M"] * self.params["Ka"] * pressure / (
@@ -265,15 +307,16 @@ class ModelIsotherm:
             for i in range(len(param_names)):
                 self.params[param_names[i]] = params_[i]
 
-            return np.sum((self.df[self.loading_key].values -
-                          self.loading(self.df[self.pressure_key].values)) ** 2)
+            return np.sum((self.df[self.loading_key].values - self.loading(
+                self.df[self.pressure_key].values))**2)
 
         # minimize RSS
-        opt_res = scipy.optimize.minimize(residual_sum_of_squares, guess,
-                                          method=optimization_method)
+        opt_res = scipy.optimize.minimize(
+            residual_sum_of_squares, guess, method=optimization_method)
         if not opt_res.success:
-            print(opt_res.message)
-            print("\n\tDefault starting guess for parameters:", self.param_guess)
+            print((opt_res.message))
+            print(("\n\tDefault starting guess for parameters:",
+                   self.param_guess))
             raise Exception("""Minimization of RSS for %s isotherm fitting
             failed. Try a different starting point in the nonlinear optimization
             by passing a dictionary of parameter guesses, param_guess, to the
@@ -308,14 +351,13 @@ class ModelIsotherm:
             return self.params["M"] * np.log(1.0 + self.params["K"] * pressure)
 
         if self.model == "Quadratic":
-            return self.params["M"] * np.log(1.0 + self.params["Ka"] * pressure+
-                                             self.params["Kb"] * pressure ** 2)
+            return self.params["M"] * np.log(1.0 + self.params["Ka"] * pressure
+                                             + self.params["Kb"] * pressure**2)
 
         if self.model == "BET":
             return self.params["M"] * np.log(
-                (1.0 - self.params["Kb"] * pressure +
-                 self.params["Ka"] * pressure) /
-                (1.0 - self.params["Kb"] * pressure))
+                (1.0 - self.params["Kb"] * pressure + self.params["Ka"] *
+                 pressure) / (1.0 - self.params["Kb"] * pressure))
 
         if self.model == "DSLangmuir":
             return self.params["M1"] * np.log(
@@ -328,18 +370,19 @@ class ModelIsotherm:
 
         if self.model == "TemkinApprox":
             one_plus_kp = 1.0 + self.params["K"] * pressure
-            return self.params["M"] * (np.log(one_plus_kp) +
-               self.params["theta"] * (2.0 * self.params["K"] * pressure + 1.0)/
-                                      (2.0 * one_plus_kp ** 2))
+            return self.params["M"] * (
+                np.log(one_plus_kp) + self.params["theta"] *
+                (2.0 * self.params["K"] * pressure + 1.0) /
+                (2.0 * one_plus_kp**2))
 
     def print_params(self):
         """
         Print identified model parameters
         """
-        print("%s identified model parameters:" % self.model)
+        print(("%s identified model parameters:" % self.model))
         for param, val in self.params.items():
-            print("\t%s = %f" % (param, val))
-        print("RMSE = ", self.rmse)
+            print(("\t%s = %f" % (param, val)))
+        print(("RMSE = ", self.rmse))
 
 
 class InterpolatorIsotherm:
@@ -356,8 +399,11 @@ class InterpolatorIsotherm:
     extrapolate loading as `fill_value`.
     """
 
-    def __init__(self, df, loading_key=None, pressure_key=None,
-        fill_value=None):
+    def __init__(self,
+                 df,
+                 loading_key=None,
+                 pressure_key=None,
+                 fill_value=None):
         """
         Instantiation. InterpolatorIsotherm is instantiated by passing it the
         pure-component adsorption isotherm data in the form of a Pandas
@@ -381,8 +427,12 @@ class InterpolatorIsotherm:
         # if pressure = 0 not in data frame, add it for interpolation between
         #   p = 0 and the lowest, nonzero pressure point.
         if 0.0 not in df[pressure_key].values:
-            df = pd.concat([pd.DataFrame({pressure_key: 0.0, loading_key: 0.0},
-                                         index=[0]), df])
+            df = pd.concat([
+                pd.DataFrame({
+                    pressure_key: 0.0,
+                    loading_key: 0.0
+                }, index=[0]), df
+            ])
 
         # store isotherm data in self
         #: Pandas DataFrame on which isotherm was fit
@@ -400,9 +450,11 @@ class InterpolatorIsotherm:
             self.interp1d = interp1d(self.df[pressure_key],
                                      self.df[loading_key])
         else:
-            self.interp1d = interp1d(self.df[pressure_key],
-                                     self.df[loading_key],
-                                     fill_value=fill_value, bounds_error=False)
+            self.interp1d = interp1d(
+                self.df[pressure_key],
+                self.df[loading_key],
+                fill_value=fill_value,
+                bounds_error=False)
         #: value of loading to assume beyond highest pressure in the data
         self.fill_value = fill_value
 
@@ -460,9 +512,9 @@ class InterpolatorIsotherm:
                 `fill_value`. This is reasonable if your isotherm data exhibits
                 a plateau at the highest pressures.
             Option 3: Go back to the lab or computer to collect isotherm data
-                at higher pressures. (Extrapolation can be dangerous!)"""
-                            % (self.df[self.pressure_key].max(),
-                               self.df[self.pressure_key].max()))
+                at higher pressures. (Extrapolation can be dangerous!)""" %
+                            (self.df[self.pressure_key].max(),
+                             self.df[self.pressure_key].max()))
 
         # Get all data points that are at nonzero pressures
         pressures = self.df[self.pressure_key].values[
@@ -499,15 +551,19 @@ class InterpolatorIsotherm:
             # finally, area of last segment
             slope = (self.loading(pressure) - loadings[n_points - 1]) / (
                 pressure - pressures[n_points - 1])
-            intercept = loadings[n_points - 1] - slope * pressures[n_points - 1]
+            intercept = loadings[n_points -
+                                 1] - slope * pressures[n_points - 1]
             area += slope * (pressure - pressures[n_points - 1]) + intercept * \
                                     np.log(pressure / pressures[n_points - 1])
 
             return area
 
 
-def plot_isotherm(isotherm, withfit=True, xlogscale=False,
-                  ylogscale=False, pressure=None):
+def plot_isotherm(isotherm,
+                  withfit=True,
+                  xlogscale=False,
+                  ylogscale=False,
+                  pressure=None):
     """
     Plot isotherm data and fit using Matplotlib.
 
@@ -526,15 +582,16 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False,
                 # do not include zero for log-scale
                 idx = isotherm.df[isotherm.pressure_key].values != 0.0
                 min_p = np.min(isotherm.df[isotherm.pressure_key].iloc[idx])
-                pressure = np.logspace(np.log(min_p), np.log(
-                    isotherm.df[isotherm.pressure_key].max()), 200)
+                pressure = np.logspace(
+                    np.log(min_p),
+                    np.log(isotherm.df[isotherm.pressure_key].max()), 200)
             else:
-                pressure = np.linspace(isotherm.df[isotherm.pressure_key].min(),
-                                       isotherm.df[isotherm.pressure_key].max(),
-                                       200)
+                pressure = np.linspace(
+                    isotherm.df[isotherm.pressure_key].min(),
+                    isotherm.df[isotherm.pressure_key].max(), 200)
         plt.plot(pressure, isotherm.loading(pressure))
-    plt.scatter(isotherm.df[isotherm.pressure_key], isotherm.df[
-        isotherm.loading_key])
+    plt.scatter(isotherm.df[isotherm.pressure_key],
+                isotherm.df[isotherm.loading_key])
     if xlogscale:
         plt.xscale("log")
     if ylogscale:
@@ -545,6 +602,7 @@ def plot_isotherm(isotherm, withfit=True, xlogscale=False,
     plt.ylabel('Loading')
     plt.show()
 
+
 ###
 #   Tell user to switch to v1 if still using v0 classes.
 ###
@@ -554,10 +612,12 @@ DEPRECIATION_MESSAGE = """Depreciated. You are using an old version of pyIAST.
     See new class ModelIsotherm in docs, where all analytical isotherm models
     are now consolidated."""
 
+
 class LangmuirIsotherm:
     """
     Depreciated LangmuirIsotherm, consolidated into ModelIsotherm
     """
+
     def __init__(self, *args, **kwargs):
         raise Exception(DEPRECIATION_MESSAGE)
 
@@ -566,6 +626,7 @@ class BETIsotherm:
     """
     Depreciated BETIsotherm, consolidated into ModelIsotherm
     """
+
     def __init__(self, *args, **kwargs):
         raise Exception(DEPRECIATION_MESSAGE)
 
@@ -574,6 +635,7 @@ class QuadraticIsotherm:
     """
     Depreciated QuadraticIsotherm, consolidated into ModelIsotherm
     """
+
     def __init__(self, *args, **kwargs):
         raise Exception(DEPRECIATION_MESSAGE)
 
@@ -583,6 +645,7 @@ class SipsIsotherm:
     Depreciated SipsIsotherm. We shouldn't use this anyway since it does not
     obey Henry's law at low coverage.
     """
+
     def __init__(self, *args, **kwargs):
         raise Exception("""This isotherm model actually cannot be used in IAST
         calculations because it does not have a finite slope at the origin. See

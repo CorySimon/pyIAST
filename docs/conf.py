@@ -11,27 +11,27 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from __future__ import absolute_import
 import sys, os
- # from mock import Mock as MagicMock  # for local make html
- # from unittest.mock import MagicMock
+# from mock import Mock as MagicMock  # for local make html
+# from unittest.mock import MagicMock
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # check if on rtd
 if on_rtd == False:
-    import sphinx_rtd_theme # for local
+    import sphinx_rtd_theme  # for local
 
- # class Mock(MagicMock):
- #     @classmethod
- #     def __getattr__(cls, name):
- #         return Mock()
-  
- # MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'scipy.interpolate', 'scipy.optimize']
- # sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+# class Mock(MagicMock):
+#     @classmethod
+#     def __getattr__(cls, name):
+#         return Mock()
 
+# MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'scipy.interpolate', 'scipy.optimize']
+# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('.') + "/../pyiast/")
- # sys.path.insert(0, ".")
+# sys.path.insert(0, ".")
 
 # -- General configuration -----------------------------------------------------
 
@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.abspath('.') + "/../pyiast/")
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.mathjax']
- # extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.mathjax', 'sphinx.ext.mathbase']
+# extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.mathjax', 'sphinx.ext.mathbase']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -101,7 +101,6 @@ pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
-
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -186,25 +185,23 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'IASTdoc'
 
-
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'IAST.tex', u'pyIAST Documentation',
-   u'Cory M. Simon', 'manual'),
+    ('index', 'IAST.tex', u'pyIAST Documentation', u'Cory M. Simon', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -227,19 +224,14 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
-
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'iast', u'IAST Documentation',
-     [u'Cory M. Simon'], 1)
-]
+man_pages = [('index', 'iast', u'IAST Documentation', [u'Cory M. Simon'], 1)]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
-
 
 # -- Options for Texinfo output ------------------------------------------------
 
@@ -247,9 +239,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'IAST', u'IAST Documentation',
-   u'Cory M. Simon', 'IAST', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'IAST', u'IAST Documentation', u'Cory M. Simon', 'IAST',
+     'One line description of project.', 'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
