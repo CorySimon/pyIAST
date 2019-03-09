@@ -1,0 +1,18 @@
+sudo: required
+
+language: python
+
+python:
+    - "2.7"
+    - "3.6"
+
+cache: pip
+
+
+install:
+    # Upgrade pip setuptools and wheel to be able to run the next command
+    - pip install -U pip==18.1 wheel setuptools
+    - pip install -e .[pre-commit]
+
+script:
+    - python -c "import pyiast;"

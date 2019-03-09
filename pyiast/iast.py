@@ -2,13 +2,10 @@
 This module performs the heart of the IAST calculations, given the
 pure-component adsorption isotherm models from the `isotherms` module.
 """
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__ = 'Cory M. Simon'
-
-# This code is written for Python 3.
-import sys
-if sys.version_info[0] != 3:
-    print("pyIAST now requires Python 3.")
-    sys.exit(1)
 
 from pyiast.isotherms import _MODELS, _MODEL_PARAMS, _VERSION, ModelIsotherm, \
     InterpolatorIsotherm, plot_isotherm
