@@ -3,6 +3,9 @@ This module contains objects to characterize the pure-component adsorption
 isotherms from experimental or simulated data. These will be fed into the
 IAST functions in pyiast.py.
 """
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__ = 'Cory M. Simon'
 __all__ = ["ModelIsotherm", "InterpolatorIsotherm",
            "plot_isotherm", "_MODELS", "_MODEL_PARAMS",
@@ -57,7 +60,7 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     # guess Langmuir K using the guess for saturation loading and lowest
     #   pressure point (but not zero)
     df_nonzero = df[df[loading_key] != 0.0]
-    idx_min = df_nonzero[loading_key].argmin()
+    idx_min = df_nonzero[loading_key].idxmin()
     langmuir_k = df_nonzero[loading_key].loc[idx_min] / \
                  df_nonzero[pressure_key].loc[idx_min] / (
                      saturation_loading - df_nonzero[pressure_key].loc[idx_min])
@@ -188,7 +191,7 @@ class ModelIsotherm:
         # Override defaults if user provides param_guess dictionary
         if param_guess is not None:
             for param, guess_val in param_guess.items():
-                if param not in self.param_guess.keys():
+                if param not in list(self.param_guess.keys()):
                     raise Exception("%s is not a valid parameter"
                                     " in the %s model." % (param, model))
                 self.param_guess[param] = guess_val
@@ -272,8 +275,8 @@ class ModelIsotherm:
         opt_res = scipy.optimize.minimize(residual_sum_of_squares, guess,
                                           method=optimization_method)
         if not opt_res.success:
-            print(opt_res.message)
-            print("\n\tDefault starting guess for parameters:", self.param_guess)
+            print((opt_res.message))
+            print(("\n\tDefault starting guess for parameters:", self.param_guess))
             raise Exception("""Minimization of RSS for %s isotherm fitting
             failed. Try a different starting point in the nonlinear optimization
             by passing a dictionary of parameter guesses, param_guess, to the
@@ -336,10 +339,10 @@ class ModelIsotherm:
         """
         Print identified model parameters
         """
-        print("%s identified model parameters:" % self.model)
+        print(("%s identified model parameters:" % self.model))
         for param, val in self.params.items():
-            print("\t%s = %f" % (param, val))
-        print("RMSE = ", self.rmse)
+            print(("\t%s = %f" % (param, val)))
+        print(("RMSE = ", self.rmse))
 
 
 class InterpolatorIsotherm:
