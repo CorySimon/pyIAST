@@ -1,0 +1,3 @@
+*.egg-info
+test/*/*pdf
+test/*/*png
