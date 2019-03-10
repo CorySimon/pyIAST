@@ -3,3 +3,14 @@
   sha: a234ce4e185cf77a55632888f1811d83b4ad9ef2
   hooks:
   - id: python-modernize
+
+- repo: local
+  hooks:
+  - id: yapf
+    name: yapf
+    entry: yapf
+    language: system
+    types: [python]
+    args: ["-i"]
+
+
