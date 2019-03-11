@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 from setuptools import setup
 
-setup(name='pyiast',
+setup(
+    name='pyiast',
     version='1.4.2',
     description='Ideal Adsorbed Solution Theory',
     url='https://github.com/CorySimon/pyIAST',
