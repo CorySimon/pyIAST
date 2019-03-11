@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # ! version
-_VERSION = "1.4.2"
+_VERSION = "1.4.3"
 
 # ! list of models implemented in pyIAST
 _MODELS = [

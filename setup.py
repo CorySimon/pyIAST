@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='pyiast',
-    version='1.4.2',
+    version='1.4.3',
     description='Ideal Adsorbed Solution Theory',
     url='https://github.com/CorySimon/pyIAST',
     download_url='https://github.com/CorySimon/pyIAST/tarball/master',
