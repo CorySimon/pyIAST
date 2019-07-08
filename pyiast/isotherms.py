@@ -87,7 +87,7 @@ def get_default_guess_params(model, df, pressure_key, loading_key):
     idx_min = df_nonzero[loading_key].idxmin()
     langmuir_k = df_nonzero[loading_key].loc[idx_min] / \
                  df_nonzero[pressure_key].loc[idx_min] / (
-                     saturation_loading - df_nonzero[pressure_key].loc[idx_min])
+                     saturation_loading - df_nonzero[loading_key].loc[idx_min])
 
     if model == "Langmuir":
         return {"M": saturation_loading, "K": langmuir_k}
