@@ -1,3 +1,5 @@
 *.egg-info
 test/*/*pdf
 test/*/*png
+.idea/
+.pytest_cache
