@@ -176,22 +176,24 @@ class ModelIsotherm:
     """
 
     def __init__(self,
-                 df,
+                 df=None,
                  loading_key=None,
                  pressure_key=None,
                  model=None,
-                 param_guess=None,
+                 params=None,
                  optimization_method="Nelder-Mead"):
         """
         Instantiation. A `ModelIsotherm` class is instantiated by passing it the
         pure-component adsorption isotherm in the form of a Pandas DataFrame.
         The least squares data fitting is done here.
 
-        :param df: DataFrame pure-component adsorption isotherm data
+        :param df: DataFrame pure-component adsorption isotherm data. If not specified,
+            uses `params` directly without fitting
         :param loading_key: String key for loading column in df
         :param pressure_key: String key for pressure column in df
-        :param param_guess: Dict starting guess for model parameters in the
-            data fitting routine
+        :param params: Dict starting guess for model parameters in the
+            data fitting routine, if `df` is specified. If not, assumes these parameters
+            without fitting
         :param optimization_method: String method in SciPy minimization function
             to use in fitting model to data.
             See [here](http://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize).
@@ -206,41 +208,47 @@ class ModelIsotherm:
             raise Exception("Model %s not an option in pyIAST. See viable"
                             "models with pyiast._MODELS" % model)
 
+        if df is None and params is None:
+            raise Exception("Must specify data to fit to, parameters for the isotherm model,"
+                            " or both.")
+
         #: Name of analytical model to fit to pure-component isotherm data
         #: adsorption isotherm
         self.model = model
+        self.set_data(df, loading_key, pressure_key)
 
-        #: Pandas DataFrame on which isotherm was fit
-        self.df = df
-        if None in [loading_key, pressure_key]:
-            raise Exception(
-                "Pass loading_key and pressure_key, the names of the loading and"
-                " pressure columns in the DataFrame, to the constructor.")
-        #: name of column in `df` that contains loading
-        self.loading_key = loading_key
-        #: name of column in `df` that contains pressure
-        self.pressure_key = pressure_key
+        if df is not None:
 
-        # ! root mean square error in fit
-        self.rmse = np.nan
+            #: Pandas DataFrame on which isotherm was fit
+            if None in [loading_key, pressure_key]:
+                raise Exception(
+                    "Pass loading_key and pressure_key, the names of the loading and"
+                    " pressure columns in the DataFrame, to the constructor.")
 
-        # ! Dictionary of parameters as a starting point for data fitting
-        self.param_guess = get_default_guess_params(model, df, pressure_key,
-                                                    loading_key)
-        # Override defaults if user provides param_guess dictionary
-        if param_guess is not None:
-            for param, guess_val in param_guess.items():
-                if param not in list(self.param_guess.keys()):
-                    raise Exception("%s is not a valid parameter"
-                                    " in the %s model." % (param, model))
-                self.param_guess[param] = guess_val
+            # ! root mean square error in fit
+            self.rmse = np.nan
 
-        # ! Dictionary of identified model parameters
-        # initialize params as nan
-        self.params = copy.deepcopy(_MODEL_PARAMS[model])
+            # ! Dictionary of parameters as a starting point for data fitting
+            self.param_guess = get_default_guess_params(model, df, pressure_key,
+                                                        loading_key)
+            # Override defaults if user provides param_guess dictionary
+            if params is not None:
+                for param, guess_val in params.items():
+                    if param not in list(self.param_guess.keys()):
+                        raise Exception("%s is not a valid parameter"
+                                        " in the %s model." % (param, model))
+                    self.param_guess[param] = guess_val
 
-        # fit model to isotherm data in self.df
-        self._fit(optimization_method)
+            # ! Dictionary of identified model parameters
+            # initialize params as nan
+            self.params = copy.deepcopy(_MODEL_PARAMS[model])
+
+            # fit model to isotherm data in self.df
+            self._fit(optimization_method)
+
+        if df is None and params is not None:
+            self.df = None
+            self.params = params
 
     def loading(self, pressure):
         """
@@ -285,6 +293,14 @@ class ModelIsotherm:
                      self.params["theta"] * langmuir_fractional_loading ** 2 * \
                      (langmuir_fractional_loading - 1))
 
+    def set_data(self, df: pd.DataFrame, loading_key, pressure_key):
+        """
+        Sets data to be fitted
+        """
+        self.df = df
+        self.loading_key = loading_key
+        self.pressure_key = pressure_key
+
     def _fit(self, optimization_method):
         """
         Fit model to data using nonlinear optimization with least squares loss
@@ -293,6 +309,9 @@ class ModelIsotherm:
         :param K_guess: float guess Langmuir constant (units: 1/pressure)
         :param M_guess: float guess saturation loading (units: loading)
         """
+        if self.df is None:
+            raise Exception("No fitting data specified. Set the data by calling"
+                            " `isotherm.set_data(df, loading_key, pressure_key)`")
         # parameter names (cannot rely on order in Dict)
         param_names = [param for param in self.params.keys()]
         # guess
